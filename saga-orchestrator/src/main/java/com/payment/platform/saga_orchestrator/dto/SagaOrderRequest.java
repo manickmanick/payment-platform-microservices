@@ -1,26 +1,18 @@
-package com.order.order_service.dto;
+package com.payment.platform.saga_orchestrator.dto;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
-public record PaymentRequest (
-
+public record SagaOrderRequest(
         @NotNull
         Long userId,
 
         @NotNull
-        Long orderId,
-
-        @NotNull
-        @DecimalMin(value="0.01")
+        @DecimalMin("0.01")
         BigDecimal amount,
 
-        @NotNull
-        String currency
-
-
-
-){
+        boolean simulatePaymentFailure
+) {
 }

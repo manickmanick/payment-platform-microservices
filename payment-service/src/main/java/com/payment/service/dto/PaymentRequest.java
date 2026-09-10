@@ -18,6 +18,8 @@ public record PaymentRequest(
         BigDecimal amount,
 
         @NotNull
-        String currency
+        String currency,
+
+         boolean simulateFailure
 ) {
 }

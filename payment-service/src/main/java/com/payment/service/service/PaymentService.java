@@ -20,12 +20,16 @@ public class PaymentService {
     @Transactional
     public PaymentResponse createPayment(PaymentRequest request) {
 
+        PaymentStatus status = request.simulateFailure()
+                ? PaymentStatus.FAILED
+                : PaymentStatus.SUCCESS;
+
         Payment payment = Payment.builder()
                 .userId(request.userId())
                 .orderId(request.orderId())
                 .amount(request.amount())
                 .currency(request.currency())
-                .status(PaymentStatus.SUCCESS)
+                .status(status)
                 .createdAt(LocalDateTime.now())
                 .build();
 
