@@ -16,26 +16,17 @@ import java.time.LocalDateTime;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final PaymentFailureSimulator failureSimulator;
 
     @Transactional
     public PaymentResponse createPayment(PaymentRequest request) {
 
-        // 1. Check whether this payment request was already processed
         return paymentRepository
                 .findByIdempotencyKey(request.idempotencyKey())
                 .map(this::toResponse)
-                .orElseGet(() -> processNewPayment(request));
+                .orElseGet(() -> createNewPayment(request));
     }
 
-    @Transactional
-    public PaymentResponse processNewPayment(PaymentRequest request) {
-
-        if (failureSimulator.shouldFail()) {
-            throw new RuntimeException(
-                    "Simulated temporary payment failure"
-            );
-        }
+    private PaymentResponse createNewPayment(PaymentRequest request) {
 
         PaymentStatus status = request.simulateFailure()
                 ? PaymentStatus.FAILED
@@ -54,7 +45,6 @@ public class PaymentService {
         Payment savedPayment = paymentRepository.save(payment);
 
         return toResponse(savedPayment);
-
     }
 
     private PaymentResponse toResponse(Payment payment) {

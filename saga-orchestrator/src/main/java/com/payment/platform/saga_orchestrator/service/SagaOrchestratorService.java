@@ -5,20 +5,25 @@ import com.payment.platform.saga_orchestrator.client.OrderClient;
 import com.payment.platform.saga_orchestrator.client.PaymentClient;
 import com.payment.platform.saga_orchestrator.dto.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import io.github.resilience4j.retry.annotation.Retry;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SagaOrchestratorService {
 
     private final OrderClient orderClient;
     private final PaymentServiceClient paymentServiceClient;
 
-
     public OrderResponse executeSaga(SagaOrderRequest request) {
 
-        // 1. Create order
+        log.info(
+                "Saga started. idempotencyKey={}",
+                request.idempotencyKey()
+        );
+
         CreateOrderRequest orderRequest =
                 new CreateOrderRequest(
                         request.userId(),
@@ -28,9 +33,14 @@ public class SagaOrchestratorService {
         OrderResponse order =
                 orderClient.createOrder(orderRequest);
 
+        log.info(
+                "Order created. orderId={}, status={}",
+                order.orderId(),
+                order.status()
+        );
+
         try {
 
-            // 2. Create payment
             PaymentRequest paymentRequest =
                     new PaymentRequest(
                             request.userId(),
@@ -44,27 +54,38 @@ public class SagaOrchestratorService {
             PaymentResponse payment =
                     paymentServiceClient.createPayment(paymentRequest);
 
-            // 3. Payment result
+            log.info(
+                    "Payment completed. paymentId={}, status={}",
+                    payment.paymentId(),
+                    payment.status()
+            );
+
             if ("SUCCESS".equals(payment.status())) {
 
-                return orderClient.confirmOrder(
+                log.info(
+                        "Confirming order. orderId={}",
                         order.orderId()
                 );
 
+                return orderClient.confirmOrder(order.orderId());
             }
 
-            // 4. Compensation
-            return orderClient.cancelOrder(
+            log.warn(
+                    "Payment failed. Cancelling order. orderId={}",
                     order.orderId()
             );
+
+            return orderClient.cancelOrder(order.orderId());
 
         } catch (Exception exception) {
 
-            // 5. Compensation after technical failure
-            return orderClient.cancelOrder(
-                    order.orderId()
+            log.error(
+                    "Saga failed. Cancelling order. orderId={}",
+                    order.orderId(),
+                    exception
             );
+
+            return orderClient.cancelOrder(order.orderId());
         }
     }
-
 }
