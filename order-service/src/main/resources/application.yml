@@ -1,6 +1,9 @@
 server:
   port: 8082
 
+payment-service:
+  url: http://localhost:8081
+
 spring:
   application:
     name: order-service
