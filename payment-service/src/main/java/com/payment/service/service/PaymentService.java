@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final PaymentFailureSimulator failureSimulator;
 
     @Transactional
     public PaymentResponse createPayment(PaymentRequest request) {
@@ -27,6 +28,8 @@ public class PaymentService {
     }
 
     private PaymentResponse createNewPayment(PaymentRequest request) {
+
+        failureSimulator.simulateFailure();
 
         PaymentStatus status = request.simulateFailure()
                 ? PaymentStatus.FAILED

@@ -13,10 +13,20 @@ payment-service:
 
 
 resilience4j:
-  retry:
+  circuitbreaker:
     instances:
-      paymentServiceRetry:
-        max-attempts: 3
-        wait-duration: 2s
-        retry-exceptions:
-          - java.lang.RuntimeException
+      paymentServiceCircuitBreaker:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 5
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+        automatic-transition-from-open-to-half-open-enabled: true
+#  retry:
+#    instances:
+#      paymentServiceRetry:
+#        max-attempts: 3
+#        wait-duration: 2s
+#        retry-exceptions:
+#          - java.lang.RuntimeException
