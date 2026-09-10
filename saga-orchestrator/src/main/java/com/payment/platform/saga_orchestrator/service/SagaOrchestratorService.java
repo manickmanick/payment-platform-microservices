@@ -6,13 +6,14 @@ import com.payment.platform.saga_orchestrator.client.PaymentClient;
 import com.payment.platform.saga_orchestrator.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import io.github.resilience4j.retry.annotation.Retry;
 
 @Service
 @RequiredArgsConstructor
 public class SagaOrchestratorService {
 
     private final OrderClient orderClient;
-    private final PaymentClient paymentClient;
+    private final PaymentServiceClient paymentServiceClient;
 
 
     public OrderResponse executeSaga(SagaOrderRequest request) {
@@ -40,7 +41,7 @@ public class SagaOrchestratorService {
                     );
 
             PaymentResponse payment =
-                    paymentClient.createPayment(paymentRequest);
+                    paymentServiceClient.createPayment(paymentRequest);
 
             // 3. Payment result
             if ("SUCCESS".equals(payment.status())) {
@@ -64,4 +65,5 @@ public class SagaOrchestratorService {
             );
         }
     }
+
 }

@@ -16,9 +16,16 @@ import java.time.LocalDateTime;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final PaymentFailureSimulator failureSimulator;
 
     @Transactional
     public PaymentResponse createPayment(PaymentRequest request) {
+
+        if (failureSimulator.shouldFail()) {
+            throw new RuntimeException(
+                    "Simulated temporary payment failure"
+            );
+        }
 
         PaymentStatus status = request.simulateFailure()
                 ? PaymentStatus.FAILED
