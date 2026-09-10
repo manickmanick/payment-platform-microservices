@@ -37,7 +37,8 @@ public class SagaOrchestratorService {
                             order.orderId(),
                             request.amount(),
                             "INR",
-                            request.simulatePaymentFailure()
+                            request.simulatePaymentFailure(),
+                            request.idempotencyKey()
                     );
 
             PaymentResponse payment =

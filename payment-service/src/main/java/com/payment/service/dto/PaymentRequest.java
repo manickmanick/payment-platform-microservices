@@ -1,6 +1,7 @@
 package com.payment.service.dto;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
@@ -20,6 +21,8 @@ public record PaymentRequest(
         @NotNull
         String currency,
 
-         boolean simulateFailure
+         boolean simulateFailure,
+
+        @NotBlank String idempotencyKey
 ) {
 }

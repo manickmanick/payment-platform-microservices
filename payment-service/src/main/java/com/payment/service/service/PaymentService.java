@@ -21,6 +21,16 @@ public class PaymentService {
     @Transactional
     public PaymentResponse createPayment(PaymentRequest request) {
 
+        // 1. Check whether this payment request was already processed
+        return paymentRepository
+                .findByIdempotencyKey(request.idempotencyKey())
+                .map(this::toResponse)
+                .orElseGet(() -> processNewPayment(request));
+    }
+
+    @Transactional
+    public PaymentResponse processNewPayment(PaymentRequest request) {
+
         if (failureSimulator.shouldFail()) {
             throw new RuntimeException(
                     "Simulated temporary payment failure"
@@ -37,14 +47,21 @@ public class PaymentService {
                 .amount(request.amount())
                 .currency(request.currency())
                 .status(status)
+                .idempotencyKey(request.idempotencyKey())
                 .createdAt(LocalDateTime.now())
                 .build();
 
         Payment savedPayment = paymentRepository.save(payment);
 
+        return toResponse(savedPayment);
+
+    }
+
+    private PaymentResponse toResponse(Payment payment) {
+
         return new PaymentResponse(
-                savedPayment.getId(),
-                savedPayment.getStatus().name()
+                payment.getId(),
+                payment.getStatus().name()
         );
     }
 }

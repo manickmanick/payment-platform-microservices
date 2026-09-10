@@ -20,7 +20,9 @@ public record PaymentRequest(
         @NotBlank
         String currency,
 
-        boolean simulateFailure
+        boolean simulateFailure,
+
+        String idempotencyKey
 
 ) {
 }
