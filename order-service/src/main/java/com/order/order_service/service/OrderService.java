@@ -7,13 +7,16 @@ import com.order.order_service.dto.PaymentRequest;
 import com.order.order_service.dto.PaymentResponse;
 import com.order.order_service.entity.Order;
 import com.order.order_service.entity.OrderStatus;
+import com.order.order_service.event.OrderCreatedEvent;
 import com.order.order_service.repository.OrderRepository;
+import com.order.order_service.service.messaging.OrderEventProducer;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 
 @Service
@@ -21,6 +24,7 @@ import java.time.LocalDateTime;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final OrderEventProducer orderEventProducer;
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
@@ -33,6 +37,15 @@ public class OrderService {
                 .build();
 
         Order savedOrder = orderRepository.save(order);
+
+        OrderCreatedEvent event = new OrderCreatedEvent(
+                UUID.randomUUID().toString(),
+                savedOrder.getId(),
+                savedOrder.getUserId(),
+                savedOrder.getAmount()
+        );
+
+        orderEventProducer.publishOrderCreated(event);
 
         return toResponse(savedOrder);
     }
