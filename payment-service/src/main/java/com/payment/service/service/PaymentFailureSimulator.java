@@ -1,6 +1,7 @@
 package com.payment.service.service;
 
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,7 +21,8 @@ public class PaymentFailureSimulator {
 //    }
 
 
-    private boolean failureMode = true;
+    @Value("${payment.simulator.failure-mode:false}")
+    private boolean failureMode;
 
     public void simulateFailure() {
 
@@ -31,11 +33,4 @@ public class PaymentFailureSimulator {
         }
     }
 
-    public void disableFailure() {
-        failureMode = false;
-    }
-
-    public void enableFailure() {
-        failureMode = true;
-    }
 }
