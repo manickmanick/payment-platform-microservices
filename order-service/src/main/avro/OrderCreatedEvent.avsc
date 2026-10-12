@@ -1,0 +1,28 @@
+{
+"type": "record",
+"name": "OrderCreatedEvent",
+"namespace": "com.order.order_service.avro",
+"fields":[
+        {
+             "name": "eventId",
+             "type": "string"
+           },
+           {
+             "name": "orderId",
+             "type": "long"
+           },
+           {
+             "name": "userId",
+             "type": "long"
+           },
+            {
+                 "name": "amount",
+                 "type": {
+                   "type": "bytes",
+                   "logicalType": "decimal",
+                   "precision": 12,
+                   "scale": 2
+                 }
+               }
+]
+}
