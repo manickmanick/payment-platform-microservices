@@ -41,6 +41,15 @@
 		</dependencies>
 	</dependencyManagement>
 
+
+	<repositories>
+		<repository>
+			<id>confluent</id>
+			<url>https://packages.confluent.io/maven/</url>
+		</repository>
+	</repositories>
+
+
 	<dependencies>
 
 		<!-- Spring Boot Actuator -->
@@ -147,6 +156,14 @@
 			<artifactId>avro</artifactId>
 			<version>1.12.0</version>
 		</dependency>
+
+
+		<dependency>
+			<groupId>io.confluent</groupId>
+			<artifactId>kafka-avro-serializer</artifactId>
+			<version>8.1.1</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
