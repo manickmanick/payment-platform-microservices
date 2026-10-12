@@ -14,6 +14,7 @@ spring:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+      enable-auto-commit: false
       properties:
         "[spring.json.value.default.type]": com.payment.service.event.OrderCreatedEvent
         "[spring.json.use.type.headers]": false
@@ -21,6 +22,9 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+
+    listner:
+      ack-mode: record
 
   datasource:
     url: jdbc:mysql://localhost:3306/payment_db
@@ -37,4 +41,4 @@ spring:
 
 payment:
   simulator:
-    failure-mode: true
+    failure-mode: false

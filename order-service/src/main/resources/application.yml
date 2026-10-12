@@ -14,10 +14,12 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
 
+      batch-size: 32768
       acks: all
       retries: 10
       properties:
           "[enable.idempotence]": true
+          "[linger.ms]": 10
 
   datasource:
     url: jdbc:mysql://localhost:3306/order_db

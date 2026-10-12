@@ -6,6 +6,7 @@ public record OrderCreatedEvent(
         String eventId,
         Long orderId,
         Long userId,
-        BigDecimal amount
+        BigDecimal amount,
+        String currency
 ) {
 }

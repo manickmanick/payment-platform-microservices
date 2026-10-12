@@ -46,11 +46,13 @@ public class OrderService {
 
         // 2. Create the event with a unique event ID.
 
+
         OrderCreatedEvent event = new OrderCreatedEvent(
                 UUID.randomUUID().toString(),
                 savedOrder.getId(),
                 savedOrder.getUserId(),
-                savedOrder.getAmount()
+                savedOrder.getAmount(),
+                "INR"
         );
 
         // 3. Serialize the event into JSON.

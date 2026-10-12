@@ -23,6 +23,8 @@ public class OrderEventConsumer {
                 event.eventId(), event.orderId());
 
 
+        String currency = event.currency() == null ? "INR" :  event.currency();
+
         PaymentRequest request = new PaymentRequest(
                 event.userId(),
                 event.orderId(),
