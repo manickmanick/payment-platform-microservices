@@ -44,3 +44,7 @@ spring:
 payment:
   simulator:
     failure-mode: false
+
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  account-id: ${STRIPE_ACCOUNT_ID}
