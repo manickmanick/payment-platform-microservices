@@ -29,6 +29,14 @@
 	<properties>
 		<java.version>21</java.version>
 	</properties>
+
+	<repositories>
+		<repository>
+			<id>confluent</id>
+			<url>https://packages.confluent.io/maven/</url>
+		</repository>
+	</repositories>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -98,6 +106,22 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-jackson</artifactId>
 		</dependency>
+
+
+		<dependency>
+			<groupId>io.confluent</groupId>
+			<artifactId>kafka-avro-serializer</artifactId>
+			<version>8.1.1</version>
+		</dependency>
+
+
+		<dependency>
+			<groupId>com.company.contracts</groupId>
+			<artifactId>event-contracts</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>
@@ -142,6 +166,7 @@
 					</execution>
 				</executions>
 			</plugin>
+
 		</plugins>
 	</build>
 

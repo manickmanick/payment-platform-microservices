@@ -12,7 +12,7 @@ spring:
 
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
 
       batch-size: 32768
       acks: all
@@ -20,11 +20,12 @@ spring:
       properties:
           "[enable.idempotence]": true
           "[linger.ms]": 10
+          "[schema.registry.url]": http://localhost:8083
 
   datasource:
-    url: jdbc:mysql://localhost:3306/order_db
-    username: root
-    password: Manick@123
+    url: ${ORDER_DB_URL:jdbc:mysql://localhost:3306/order_db}
+    username: ${ORDER_DB_USERNAME:root}
+    password: ${ORDER_DB_PASSWORD}
 
   jpa:
     hibernate:

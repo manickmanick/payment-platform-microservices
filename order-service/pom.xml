@@ -151,6 +151,8 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-jackson</artifactId>
 		</dependency>
+
+		<!-- Apache Avro data model and schema support -->
 		<dependency>
 			<groupId>org.apache.avro</groupId>
 			<artifactId>avro</artifactId>
@@ -158,11 +160,26 @@
 		</dependency>
 
 
+		<!-- Confluent Avro serializer and deserializer -->
 		<dependency>
 			<groupId>io.confluent</groupId>
 			<artifactId>kafka-avro-serializer</artifactId>
 			<version>8.1.1</version>
 		</dependency>
+
+		<!-- Spring Kafka, if not already present -->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+
+
+		<dependency>
+			<groupId>com.company.contracts</groupId>
+			<artifactId>event-contracts</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+
 
 	</dependencies>
 
@@ -227,19 +244,7 @@
 				</executions>
 			</plugin>
 
-			<plugin>
-				<groupId>org.apache.avro</groupId>
-				<artifactId>avro-maven-plugin</artifactId>
-				<version>1.12.0</version>
-				<executions>
-					<execution>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>schema</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+
 
 		</plugins>
 

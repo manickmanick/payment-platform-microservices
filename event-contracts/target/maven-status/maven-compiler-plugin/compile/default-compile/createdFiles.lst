@@ -1,0 +1,2 @@
+com\order\order_service\avro\OrderCreatedEvent.class
+com\order\order_service\avro\OrderCreatedEvent$Builder.class
