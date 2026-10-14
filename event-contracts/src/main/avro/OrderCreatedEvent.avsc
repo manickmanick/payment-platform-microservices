@@ -8,7 +8,7 @@
              "type": "string"
            },
            {
-             "name": "orderId",
+             "name": "orderI",
              "type": "long"
            },
            {
@@ -16,13 +16,8 @@
              "type": "long"
            },
             {
-                 "name": "amount",
-                 "type": {
-                   "type": "bytes",
-                   "logicalType": "decimal",
-                   "precision": 12,
-                   "scale": 2
-                 }
-               }
+              "name": "amount",
+              "type": "bytes"
+            }
 ]
 }
