@@ -49,3 +49,12 @@ stripe:
   secret-key: ${STRIPE_SECRET_KEY}
   account-id: ${STRIPE_ACCOUNT_ID}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
+resilience4j:
+  retry:
+    instances:
+      stripePaymentIntent:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2

@@ -18,6 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Locale;
+import com.stripe.exception.ApiConnectionException;
+import com.stripe.exception.ApiException;
+import com.stripe.exception.RateLimitException;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.retry.annotation.Retry;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +30,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final StripeClient stripeClient;
+    private final StripePaymentIntentService stripePaymentIntentService;
 
     @Transactional
     public PaymentResponse createPayment(PaymentRequest request) {
@@ -33,6 +39,7 @@ public class PaymentService {
                 .map(this::toResponse)
                 .orElseGet(() -> createNewPayment(request));
     }
+
 
     private PaymentResponse createNewPayment(PaymentRequest request) {
         try {
@@ -68,9 +75,8 @@ public class PaymentService {
                     .setIdempotencyKey(request.idempotencyKey())
                     .build();
 
-            PaymentIntent intent = stripeClient.v1()
-                    .paymentIntents()
-                    .create(params, options);
+            PaymentIntent intent = stripePaymentIntentService
+                    .createPaymentIntent(params, options);
 
             Payment payment = Payment.builder()
                     .userId(request.userId())
@@ -163,5 +169,34 @@ public class PaymentService {
 
         paymentRepository.save(payment);
     }
+
+
+    public String getClientSecret(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Payment not found: " + paymentId
+                ));
+
+        if (payment.getStripePaymentIntentId() == null) {
+            throw new IllegalStateException(
+                    "No Stripe PaymentIntent exists for payment: " + paymentId
+            );
+        }
+
+        try {
+            PaymentIntent intent = stripeClient.v1()
+                    .paymentIntents()
+                    .retrieve(payment.getStripePaymentIntentId());
+
+            return intent.getClientSecret();
+
+        } catch (StripeException exception) {
+            throw new IllegalStateException(
+                    "Could not retrieve Stripe client secret",
+                    exception
+            );
+        }
+    }
+
 
 }
