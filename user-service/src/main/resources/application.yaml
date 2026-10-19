@@ -1,0 +1,23 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: user-service
+
+  datasource:
+    url: ${USER_DB_URL:jdbc:mysql://localhost:3306/ecommerce_user_db}
+    username: ${USER_DB_USERNAME:root}
+    password: ${USER_DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+  flyway:
+    enabled: true
+
+  security:
+    user:
+      name: disabled
