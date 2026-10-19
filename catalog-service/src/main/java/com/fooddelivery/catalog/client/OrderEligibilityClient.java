@@ -1,0 +1,3 @@
+package com.fooddelivery.catalog.client;
+import java.util.Map;import org.springframework.cloud.openfeign.FeignClient;import org.springframework.web.bind.annotation.GetMapping;import org.springframework.web.bind.annotation.RequestHeader;import org.springframework.web.bind.annotation.RequestParam;
+@FeignClient(name="order-service",url="${order-service.url:http://localhost:8082}")public interface OrderEligibilityClient{@GetMapping("/internal/orders/review-eligibility")Map<String,Boolean> eligible(@RequestParam("userId")long userId,@RequestParam("restaurantId")long restaurantId,@RequestHeader("X-Internal-Key")String key);}

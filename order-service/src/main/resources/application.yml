@@ -2,36 +2,42 @@ server:
   port: 8082
 
 payment-service:
-  url: http://localhost:8081
+  url: ${PAYMENT_SERVICE_URL:http://localhost:8081}
+  internal-key: ${PAYMENT_INTERNAL_KEY:local-payment-key-change-me}
+catalog-service:
+  url: ${CATALOG_SERVICE_URL:http://localhost:8086}
+  internal-key: ${CATALOG_INTERNAL_KEY:local-internal-key-change-me}
+delivery-service:
+  url: ${DELIVERY_SERVICE_URL:http://localhost:8087}
+  internal-key: ${DELIVERY_INTERNAL_KEY:local-internal-key-change-me}
 
 spring:
   application:
     name: order-service
   kafka:
-    bootstrap-servers: localhost:9092
-
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
-
       batch-size: 32768
       acks: all
       retries: 10
       properties:
-          "[enable.idempotence]": true
-          "[linger.ms]": 10
-          "[schema.registry.url]": http://localhost:8083
-
+        "[enable.idempotence]": true
+        "[linger.ms]": 10
+        "[schema.registry.url]": ${SCHEMA_REGISTRY_URL:http://localhost:8083}
   datasource:
     url: ${ORDER_DB_URL:jdbc:mysql://localhost:3306/order_db}
     username: ${ORDER_DB_USERNAME:root}
-    password: ${ORDER_DB_PASSWORD}
-
+    password: ${ORDER_DB_PASSWORD:}
   jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: true
+    hibernate.ddl-auto: validate
+    show-sql: false
+  flyway.enabled: true
 
-  flyway:
-    enabled: true
-
+springdoc.swagger-ui.path: /swagger-ui.html
+management:
+  endpoints.web.exposure.include: health,info,prometheus,metrics
+  tracing.sampling.probability: ${TRACING_SAMPLING:1.0}
+  otlp.tracing.endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+logging.pattern.level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

@@ -1,0 +1,3 @@
+package com.fooddelivery.delivery.repository;
+import com.fooddelivery.delivery.entity.DriverPresence;import java.util.List;import org.springframework.data.jpa.repository.JpaRepository;import org.springframework.data.jpa.repository.Lock;import org.springframework.data.jpa.repository.Query;import jakarta.persistence.LockModeType;
+public interface DriverPresenceRepository extends JpaRepository<DriverPresence,Long>{List<DriverPresence> findByAvailableTrueOrderByUpdatedAtDesc();@Lock(LockModeType.PESSIMISTIC_WRITE)@Query("select p from DriverPresence p where p.available=true order by p.updatedAt desc")List<DriverPresence> findAvailableForUpdate();}

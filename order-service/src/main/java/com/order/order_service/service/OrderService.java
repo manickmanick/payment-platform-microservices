@@ -9,22 +9,31 @@ import com.order.order_service.entity.OutboxEvent;
 import com.order.order_service.event.OrderCreatedEvent;
 import com.order.order_service.repository.OrderRepository;
 import com.order.order_service.repository.OutboxEventRepository;
+import com.order.order_service.repository.OrderItemRepository;
+import com.order.order_service.client.DeliveryClient;
+import com.order.order_service.dto.DeliveryRequest;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
-@RequiredArgsConstructor
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+    private final OrderItemRepository orderItems;
+    private final DeliveryClient deliveryClient;
+    private final String deliveryInternalKey;
+
+    public OrderService(OrderRepository orderRepository, OutboxEventRepository outboxEventRepository, ObjectMapper objectMapper, OrderItemRepository orderItems, DeliveryClient deliveryClient, @Value("${delivery-service.internal-key:local-internal-key-change-me}") String deliveryInternalKey) {
+        this.orderRepository=orderRepository; this.outboxEventRepository=outboxEventRepository; this.objectMapper=objectMapper; this.orderItems=orderItems; this.deliveryClient=deliveryClient; this.deliveryInternalKey=deliveryInternalKey;
+    }
 
     @Transactional
     public Order createOrder(CreateOrderRequest request) {
@@ -79,11 +88,17 @@ public class OrderService {
     public OrderResponse confirmOrder(Long orderId) {
 
         Order order = findOrder(orderId);
+        boolean alreadyConfirmed = order.getStatus() == OrderStatus.CONFIRMED;
+        if(!alreadyConfirmed&&order.getStatus()!=OrderStatus.PENDING)throw new IllegalStateException("Only pending orders can be confirmed");
         order.setStatus(OrderStatus.CONFIRMED);
 
         Order updatedOrder = orderRepository.save(order);
+        var lines=orderItems.findByOrderIdOrderById(orderId).stream().map(i->new DeliveryRequest.Item(i.getItemName(),i.getQuantity())).toList();
+        if(!alreadyConfirmed&&order.getDeliveryAddress()!=null&&!order.getDeliveryAddress().isBlank()) deliveryClient.create(deliveryInternalKey,new DeliveryRequest(order.getId(),order.getUserId(),order.getCustomerEmail(),order.getCustomerPhone(),order.isSmsOptIn(),order.getDeliveryAddress(),order.getAmount(),order.getDeliveryLatitude(),order.getDeliveryLongitude(),lines));
         return toResponse(updatedOrder);
     }
+
+    @Transactional public void applyDeliveryStatus(Long orderId,OrderStatus status){Order order=findOrder(orderId);order.setStatus(status);orderRepository.save(order);}
 
     @Transactional
     public OrderResponse cancelOrder(Long orderId) {
@@ -103,6 +118,8 @@ public class OrderService {
                         )
                 );
     }
+    @org.springframework.transaction.annotation.Transactional(readOnly=true) public Order getOrder(Long orderId){return findOrder(orderId);}
+    @org.springframework.transaction.annotation.Transactional(readOnly=true) public boolean hasDeliveredOrder(Long userId,Long restaurantId){return orderItems.hasDeliveredOrder(userId,restaurantId);}
 
     private OrderResponse toResponse(Order order) {
         return new OrderResponse(

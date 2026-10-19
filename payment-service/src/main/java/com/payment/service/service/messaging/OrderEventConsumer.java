@@ -2,25 +2,24 @@
 package com.payment.service.service.messaging;
 
 import com.order.order_service.avro.OrderCreatedEvent;
-import com.payment.service.dto.PaymentRequest;
-import com.payment.service.service.PaymentService;
+import com.payment.service.service.OrderEventAuditService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.avro.Conversions;
-import org.apache.avro.LogicalTypes;
-import org.apache.avro.Schema;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import org.apache.avro.Conversions;
+import org.apache.avro.LogicalTypes;
+import org.apache.avro.Schema;
+import java.math.BigDecimal;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class OrderEventConsumer {
 
-    private final PaymentService paymentService;
+    private final OrderEventAuditService orderEventAuditService;
 
     @KafkaListener(
             topics = "order-created",
@@ -36,19 +35,16 @@ public class OrderEventConsumer {
 
         BigDecimal amount = convertAmount(event.getAmount());
 
-        PaymentRequest request = new PaymentRequest(
-                event.getUserId(),
+        orderEventAuditService.record(
+                event.getEventId().toString(),
                 event.getOrderId(),
+                event.getUserId(),
                 amount,
-                "INR",
-                false,
-                event.getEventId().toString()
+                "INR"
         );
 
-        paymentService.createPayment(request);
-
         log.info(
-                "Payment processing completed for orderId={}",
+                "Order event audit persisted for orderId={}",
                 event.getOrderId()
         );
     }

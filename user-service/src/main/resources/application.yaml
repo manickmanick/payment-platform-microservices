@@ -4,6 +4,11 @@ server:
 spring:
   application:
     name: user-service
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
   datasource:
     url: ${USER_DB_URL:jdbc:mysql://localhost:3306/ecommerce_user_db}
@@ -17,7 +22,43 @@ spring:
 
   flyway:
     enabled: true
-
+  servlet.multipart.max-file-size: 8MB
+  servlet.multipart.max-request-size: 10MB
   security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:unconfigured}
+            client-secret: ${GOOGLE_CLIENT_SECRET:unconfigured}
+            redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/api/v1/login/oauth2/code/{registrationId}}
+            scope: openid, profile, email
+
     user:
       name: disabled
+
+app:
+  admin-emails: ${ADMIN_EMAILS:}
+  driver-emails: ${DRIVER_EMAILS:}
+  restaurant-owner-emails: ${RESTAURANT_OWNER_EMAILS:}
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET:change-this-development-secret-to-at-least-32-bytes}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING:1.0}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+springdoc:
+  swagger-ui.path: /swagger-ui.html
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

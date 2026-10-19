@@ -95,7 +95,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtAuthenticationConverter jwtAuthenticationConverter
+            JwtAuthenticationConverter jwtAuthenticationConverter,
+            GoogleLoginSuccessHandler googleLoginSuccessHandler
     ) throws Exception {
 
         http
@@ -106,8 +107,15 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/auth/register",
-                                "/api/auth/login"
+                                "/api/auth/login",
+                                "/api/auth/email/verify",
+                                "/api/auth/email/resend",
+                                "/api/auth/password/forgot",
+                                "/api/auth/password/reset"
                         ).permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -116,7 +124,8 @@ public class SecurityConfig {
                                         jwtAuthenticationConverter
                                 )
                         )
-                );
+                )
+                .oauth2Login(oauth -> oauth.successHandler(googleLoginSuccessHandler));
 
         return http.build();
     }

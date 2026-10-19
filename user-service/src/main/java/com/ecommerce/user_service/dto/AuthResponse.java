@@ -6,6 +6,8 @@ public record AuthResponse(
         String email,
         String tokenType,
         String accessToken,
-        long expiresIn
+        long expiresIn,
+        String role,
+        boolean emailVerified
 ) {
 }

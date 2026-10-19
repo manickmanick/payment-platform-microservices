@@ -1,0 +1,3 @@
+package com.order.order_service.controller;
+import com.order.order_service.service.OrderCancellationService;import java.util.Map;import org.springframework.http.HttpStatus;import org.springframework.security.core.annotation.AuthenticationPrincipal;import org.springframework.security.oauth2.jwt.Jwt;import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/orders")public class OrderCancellationController{private final OrderCancellationService service;public OrderCancellationController(OrderCancellationService s){service=s;}@PostMapping("/{id}/cancel")public Map<String,Object> cancel(@AuthenticationPrincipal Jwt jwt,@PathVariable long id){return service.cancel(id,Long.parseLong(jwt.getClaim("userId").toString()),jwt.getTokenValue());}}

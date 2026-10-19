@@ -1,14 +1,9 @@
-
-server:
-  port: 8081
+server.port: 8081
 
 spring:
-  application:
-    name: payment-service
-
+  application.name: payment-service
   kafka:
-    bootstrap-servers: localhost:9092
-
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: payment-service-group
       auto-offset-reset: earliest
@@ -16,45 +11,36 @@ spring:
       value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
       enable-auto-commit: false
       properties:
-#        "[spring.json.value.default.type]": com.payment.service.event.OrderCreatedEvent
-#        "[spring.json.use.type.headers]": false
-        "[schema.registry.url]": http://localhost:8083
+        "[schema.registry.url]": ${SCHEMA_REGISTRY_URL:http://localhost:8083}
         specific.avro.reader: true
-
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
-
-    listener:
-      ack-mode: record
-
+    listener.ack-mode: record
   datasource:
     url: ${PAYMENT_DB_URL:jdbc:mysql://localhost:3306/payment_db}
     username: ${PAYMENT_DB_USERNAME:root}
-    password: ${PAYMENT_DB_PASSWORD}
-
+    password: ${PAYMENT_DB_PASSWORD:}
   jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: true
+    hibernate.ddl-auto: validate
+    show-sql: false
+  flyway.enabled: true
 
-  flyway:
-    enabled: true
-
-payment:
-  simulator:
-    failure-mode: false
-
+payment.simulator.failure-mode: false
 stripe:
-  secret-key: ${STRIPE_SECRET_KEY}
-  account-id: ${STRIPE_ACCOUNT_ID}
-  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
-
-resilience4j:
-  retry:
-    instances:
-      stripePaymentIntent:
-        max-attempts: 3
-        wait-duration: 1s
-        enable-exponential-backoff: true
-        exponential-backoff-multiplier: 2
+  secret-key: ${STRIPE_SECRET_KEY:}
+  account-id: ${STRIPE_ACCOUNT_ID:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+resilience4j.retry.instances.stripePaymentIntent:
+  max-attempts: 3
+  wait-duration: 1s
+  enable-exponential-backoff: true
+  exponential-backoff-multiplier: 2
+springdoc.swagger-ui.path: /swagger-ui.html
+payment:
+  internal-key: ${PAYMENT_INTERNAL_KEY:local-payment-key-change-me}
+management:
+  endpoints.web.exposure.include: health,info,prometheus,metrics
+  tracing.sampling.probability: ${TRACING_SAMPLING:1.0}
+  otlp.tracing.endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+logging.pattern.level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

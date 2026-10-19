@@ -1,0 +1,2 @@
+ALTER TABLE user_addresses ADD COLUMN phone_number VARCHAR(30) NULL;
+ALTER TABLE user_addresses ADD COLUMN sms_opt_in BOOLEAN NOT NULL DEFAULT FALSE;

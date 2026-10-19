@@ -1,0 +1,212 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: food-delivery
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: user-service, namespace: food-delivery}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: user-service}}
+  template:
+    metadata: {labels: {app: user-service}}
+    spec:
+      containers:
+        - name: user-service
+          image: YOUR_ECR_URI/user-service:latest
+          ports: [{containerPort: 8085}]
+          envFrom: [{secretRef: {name: food-delivery-secrets}}]
+          env: [{name: SERVER_PORT, value: "8085"}, {name: SPRING_KAFKA_BOOTSTRAP_SERVERS, value: "kafka-bootstrap:9092"}, {name: JWT_SECRET, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: JWT_SECRET}}}]
+          readinessProbe: {httpGet: {path: /actuator/health, port: 8085}, initialDelaySeconds: 30, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /actuator/health, port: 8085}, initialDelaySeconds: 45, periodSeconds: 20}
+          resources: {requests: {cpu: 100m, memory: 384Mi}, limits: {cpu: 750m, memory: 768Mi}}
+          securityContext: {allowPrivilegeEscalation: false, runAsNonRoot: true, runAsUser: 10001}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: user-service, namespace: food-delivery}
+spec: {selector: {app: user-service}, ports: [{port: 8085, targetPort: 8085}]}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: catalog-service, namespace: food-delivery}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: catalog-service}}
+  template:
+    metadata: {labels: {app: catalog-service}}
+    spec:
+      containers:
+        - name: catalog-service
+          image: YOUR_ECR_URI/catalog-service:latest
+          ports: [{containerPort: 8086}]
+          envFrom: [{secretRef: {name: food-delivery-secrets}}]
+          env: [{name: JWT_SECRET, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: JWT_SECRET}}}]
+          readinessProbe: {httpGet: {path: /actuator/health, port: 8086}, initialDelaySeconds: 30, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /actuator/health, port: 8086}, initialDelaySeconds: 45, periodSeconds: 20}
+          resources: {requests: {cpu: 100m, memory: 384Mi}, limits: {cpu: 750m, memory: 768Mi}}
+          securityContext: {allowPrivilegeEscalation: false, runAsNonRoot: true, runAsUser: 10001}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: catalog-service, namespace: food-delivery}
+spec: {selector: {app: catalog-service}, ports: [{port: 8086, targetPort: 8086}]}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: order-service, namespace: food-delivery}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: order-service}}
+  template:
+    metadata: {labels: {app: order-service}}
+    spec:
+      containers:
+        - name: order-service
+          image: YOUR_ECR_URI/order-service:latest
+          ports: [{containerPort: 8082}]
+          envFrom: [{secretRef: {name: food-delivery-secrets}}]
+          env: [{name: SPRING_KAFKA_BOOTSTRAP_SERVERS, value: "kafka-bootstrap:9092"}, {name: CATALOG_SERVICE_URL, value: "http://catalog-service:8086"}, {name: PAYMENT_SERVICE_URL, value: "http://payment-service:8081"}, {name: DELIVERY_SERVICE_URL, value: "http://delivery-service:8087"}, {name: SCHEMA_REGISTRY_URL, value: "http://schema-registry:8081"}, {name: JWT_SECRET, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: JWT_SECRET}}}]
+          readinessProbe: {httpGet: {path: /actuator/health, port: 8082}, initialDelaySeconds: 30, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /actuator/health, port: 8082}, initialDelaySeconds: 45, periodSeconds: 20}
+          resources: {requests: {cpu: 100m, memory: 384Mi}, limits: {cpu: 750m, memory: 768Mi}}
+          securityContext: {allowPrivilegeEscalation: false, runAsNonRoot: true, runAsUser: 10001}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: order-service, namespace: food-delivery}
+spec: {selector: {app: order-service}, ports: [{port: 8082, targetPort: 8082}]}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: payment-service, namespace: food-delivery}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: payment-service}}
+  template:
+    metadata: {labels: {app: payment-service}}
+    spec:
+      containers:
+        - name: payment-service
+          image: YOUR_ECR_URI/payment-service:latest
+          ports: [{containerPort: 8081}]
+          envFrom: [{secretRef: {name: food-delivery-secrets}}]
+          env: [{name: SPRING_KAFKA_BOOTSTRAP_SERVERS, value: "kafka-bootstrap:9092"}, {name: SCHEMA_REGISTRY_URL, value: "http://schema-registry:8081"}, {name: JWT_SECRET, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: JWT_SECRET}}}]
+          readinessProbe: {httpGet: {path: /actuator/health, port: 8081}, initialDelaySeconds: 30, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /actuator/health, port: 8081}, initialDelaySeconds: 45, periodSeconds: 20}
+          resources: {requests: {cpu: 100m, memory: 384Mi}, limits: {cpu: 750m, memory: 768Mi}}
+          securityContext: {allowPrivilegeEscalation: false, runAsNonRoot: true, runAsUser: 10001}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: payment-service, namespace: food-delivery}
+spec: {selector: {app: payment-service}, ports: [{port: 8081, targetPort: 8081}]}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: delivery-service, namespace: food-delivery}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: delivery-service}}
+  template:
+    metadata: {labels: {app: delivery-service}}
+    spec:
+      containers:
+        - name: delivery-service
+          image: YOUR_ECR_URI/delivery-service:latest
+          ports: [{containerPort: 8087}]
+          envFrom: [{secretRef: {name: food-delivery-secrets}}]
+          env: [{name: ORDER_SERVICE_URL, value: "http://order-service:8082"}, {name: SPRING_KAFKA_BOOTSTRAP_SERVERS, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: SPRING_KAFKA_BOOTSTRAP_SERVERS}}}]
+          readinessProbe: {httpGet: {path: /actuator/health, port: 8087}, initialDelaySeconds: 25, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /actuator/health, port: 8087}, initialDelaySeconds: 35, periodSeconds: 20}
+          resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: 500m, memory: 512Mi}}
+          securityContext: {allowPrivilegeEscalation: false, runAsNonRoot: true, runAsUser: 10001}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: delivery-service, namespace: food-delivery}
+spec: {selector: {app: delivery-service}, ports: [{port: 8087, targetPort: 8087}]}
+---
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: api-gateway, namespace: food-delivery}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: api-gateway}}
+  template:
+    metadata: {labels: {app: api-gateway}}
+    spec:
+      containers:
+        - name: api-gateway
+          image: YOUR_ECR_URI/api-gateway:latest
+          ports: [{containerPort: 8080}]
+          env: [{name: USER_SERVICE_URL, value: "http://user-service:8085"}, {name: CATALOG_SERVICE_URL, value: "http://catalog-service:8086"}, {name: ORDER_SERVICE_URL, value: "http://order-service:8082"}, {name: PAYMENT_SERVICE_URL, value: "http://payment-service:8081"}, {name: DELIVERY_SERVICE_URL, value: "http://delivery-service:8087"}, {name: CORS_ALLOWED_ORIGINS, value: "https://your-domain.example"}]
+          readinessProbe: {httpGet: {path: /actuator/health, port: 8080}, initialDelaySeconds: 20, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /actuator/health, port: 8080}, initialDelaySeconds: 30, periodSeconds: 20}
+          resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: 500m, memory: 512Mi}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, runAsUser: 10001}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: api-gateway, namespace: food-delivery}
+spec: {type: ClusterIP, selector: {app: api-gateway}, ports: [{port: 8080, targetPort: 8080}]}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: food-delivery-frontend, namespace: food-delivery}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: food-delivery-frontend}}
+  template:
+    metadata: {labels: {app: food-delivery-frontend}}
+    spec:
+      containers:
+        - name: frontend
+          image: YOUR_ECR_URI/food-delivery-frontend:latest
+          ports: [{containerPort: 80}]
+          readinessProbe: {httpGet: {path: /health, port: 80}, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /health, port: 80}, periodSeconds: 20}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: 200m, memory: 128Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: food-delivery-frontend, namespace: food-delivery}
+spec: {type: LoadBalancer, selector: {app: food-delivery-frontend}, ports: [{port: 80, targetPort: 80}]}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: mail-service, namespace: food-delivery}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: mail-service}}
+  template:
+    metadata: {labels: {app: mail-service}}
+    spec:
+      containers:
+        - name: mail-service
+          image: YOUR_ECR_URI/mail-service:latest
+          ports: [{containerPort: 8088}]
+          env:
+            - {name: SERVER_PORT, value: "8088"}
+            - {name: SPRING_KAFKA_BOOTSTRAP_SERVERS, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: SPRING_KAFKA_BOOTSTRAP_SERVERS}}}
+            - {name: MAIL_DB_URL, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: MAIL_DB_URL}}}
+            - {name: MAIL_DB_USERNAME, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: MAIL_DB_USERNAME}}}
+            - {name: MAIL_DB_PASSWORD, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: MAIL_DB_PASSWORD}}}
+            - {name: SMTP_HOST, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: SMTP_HOST}}}
+            - {name: SMTP_PORT, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: SMTP_PORT}}}
+            - {name: SMTP_USERNAME, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: SMTP_USERNAME}}}
+            - {name: SMTP_PASSWORD, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: SMTP_PASSWORD}}}
+            - {name: SMTP_AUTH, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: SMTP_AUTH}}}
+            - {name: SMTP_STARTTLS, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: SMTP_STARTTLS}}}
+            - {name: MAIL_FROM, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: MAIL_FROM}}}
+            - {name: MAIL_INTERNAL_KEY, valueFrom: {secretKeyRef: {name: food-delivery-secrets, key: MAIL_INTERNAL_KEY}}}
+          readinessProbe: {httpGet: {path: /actuator/health, port: 8088}, initialDelaySeconds: 20, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /actuator/health, port: 8088}, initialDelaySeconds: 30, periodSeconds: 20}
+          resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: 500m, memory: 512Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: mail-service, namespace: food-delivery}
+spec: {type: ClusterIP, selector: {app: mail-service}, ports: [{port: 8088, targetPort: 8088}]}

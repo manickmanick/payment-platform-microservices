@@ -1,0 +1,1 @@
+CREATE TABLE mail_deliveries (id BIGINT AUTO_INCREMENT PRIMARY KEY, recipient VARCHAR(320) NOT NULL, subject VARCHAR(200) NOT NULL, status VARCHAR(20) NOT NULL, error_message VARCHAR(1000), created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX idx_mail_status(status,created_at));

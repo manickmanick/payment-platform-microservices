@@ -1,0 +1,3 @@
+package com.fooddelivery.mail.messaging;
+import com.fooddelivery.mail.service.MailService;import org.springframework.kafka.annotation.KafkaListener;import org.springframework.stereotype.Component;import tools.jackson.databind.ObjectMapper;
+@Component public class MailEventConsumer{private final MailService mail;private final ObjectMapper mapper;public MailEventConsumer(MailService m,ObjectMapper o){mail=m;mapper=o;}@KafkaListener(topics="mail-requested",groupId="mail-service")public void consume(String event)throws Exception{MailService.MailRequest e=mapper.readValue(event,MailService.MailRequest.class);mail.send(e.to(),e.subject(),e.body());}}

@@ -37,6 +37,45 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "idempotency_key", unique = true, length = 100)
+    private String idempotencyKey;
+
+    @Column(name = "delivery_address", length = 500)
+    private String deliveryAddress;
+
+    @Column(name = "customer_email", length = 320)
+    private String customerEmail;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal subtotal = BigDecimal.ZERO;
+
+    @Column(name = "discount_amount", nullable = false, precision = 19, scale = 2)
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
+    @Column(name = "delivery_fee", nullable = false, precision = 19, scale = 2)
+    private BigDecimal deliveryFee = BigDecimal.ZERO;
+
+    @Column(name = "tax_amount", nullable = false, precision = 19, scale = 2)
+    private BigDecimal taxAmount = BigDecimal.ZERO;
+
+    @Column(name = "coupon_code", length = 40)
+    private String couponCode;
+
+    @Column(name = "stock_reserved", nullable = false)
+    private boolean stockReserved;
+
+    @Column(name="delivery_latitude",precision=10,scale=7)
+    private BigDecimal deliveryLatitude;
+
+    @Column(name="delivery_longitude",precision=10,scale=7)
+    private BigDecimal deliveryLongitude;
+
+    @Column(name="customer_phone",length=30)
+    private String customerPhone;
+
+    @Column(name="sms_opt_in",nullable=false)
+    private boolean smsOptIn;
+
     @PrePersist
     void onCreate() {
         if (createdAt == null) {

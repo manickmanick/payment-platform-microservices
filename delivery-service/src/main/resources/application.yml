@@ -1,0 +1,28 @@
+server.port: ${SERVER_PORT:8087}
+spring:
+  application.name: delivery-service
+  datasource:
+    url: ${DELIVERY_DB_URL:jdbc:mysql://localhost:3306/delivery_db}
+    username: ${DELIVERY_DB_USERNAME:root}
+    password: ${DELIVERY_DB_PASSWORD:}
+  flyway.enabled: true
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 10
+      properties:
+        "[enable.idempotence]": true
+  security.oauth2.resourceserver.jwt.secret-key: ${JWT_SECRET:change-this-development-secret-to-at-least-32-bytes}
+management.endpoints.web.exposure.include: health,info,prometheus,metrics
+management.tracing.sampling.probability: ${TRACING_SAMPLING:1.0}
+management.otlp.tracing.endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+logging.pattern.level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+springdoc.swagger-ui.path: /swagger-ui.html
+delivery.internal-key: ${DELIVERY_INTERNAL_KEY:local-internal-key-change-me}
+order-service.url: ${ORDER_SERVICE_URL:http://localhost:8082}
+twilio.account-sid: ${TWILIO_ACCOUNT_SID:}
+twilio.auth-token: ${TWILIO_AUTH_TOKEN:}
+twilio.from-number: ${TWILIO_FROM_NUMBER:}

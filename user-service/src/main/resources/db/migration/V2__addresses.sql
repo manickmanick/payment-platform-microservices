@@ -1,0 +1,13 @@
+CREATE TABLE user_addresses (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  label VARCHAR(60) NOT NULL,
+  line1 VARCHAR(250) NOT NULL,
+  line2 VARCHAR(250),
+  city VARCHAR(100) NOT NULL,
+  state VARCHAR(100) NOT NULL,
+  postal_code VARCHAR(20) NOT NULL,
+  country VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_address_user (user_id)
+);

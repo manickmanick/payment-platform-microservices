@@ -1,0 +1,9 @@
+CREATE TABLE users (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(160) NOT NULL,
+    email VARCHAR(254) NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    role VARCHAR(32) NOT NULL DEFAULT 'ROLE_USER',
+    PRIMARY KEY (id),
+    CONSTRAINT uk_users_email UNIQUE (email)
+);

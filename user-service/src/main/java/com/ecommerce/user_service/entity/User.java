@@ -32,6 +32,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String role = "ROLE_USER";
 
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = true;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role));
@@ -46,5 +49,8 @@ public class User implements UserDetails {
     public String getPassword() {
         return password;
     }
+
+    @Override
+    public boolean isEnabled() { return emailVerified; }
 
 }

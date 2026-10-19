@@ -7,6 +7,7 @@ import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Charge;
 import com.stripe.model.StripeObject;
 import com.stripe.net.Webhook;
 
@@ -86,7 +87,8 @@ public class StripeWebhookController {
         String eventType = event.getType();
 
         if (!"payment_intent.succeeded".equals(eventType)
-                && !"payment_intent.payment_failed".equals(eventType)) {
+                && !"payment_intent.payment_failed".equals(eventType)
+                && !"charge.refunded".equals(eventType)) {
 
             log.info(
                     "Ignoring unsupported Stripe event. eventId={}, eventType={}",
@@ -140,6 +142,11 @@ public class StripeWebhookController {
         }
 
         // 5. Ensure the event contains a PaymentIntent.
+        if ("charge.refunded".equals(eventType)) {
+            if (!(stripeObject instanceof Charge charge) || charge.getPaymentIntent()==null) return ResponseEntity.badRequest().body("Expected a refunded Charge event");
+            try { paymentService.updateRefundStatus(charge.getPaymentIntent()); return ResponseEntity.ok("Refund event processed"); }
+            catch (Exception exception) { log.error("Failed to update refund status for charge {}",charge.getId(),exception);return ResponseEntity.internalServerError().body("Refund processing failed"); }
+        }
         if (!(stripeObject instanceof PaymentIntent intent)) {
             log.error(
                     "Unexpected Stripe event object. eventId={}, eventType={}, objectType={}",

@@ -1,0 +1,2 @@
+ALTER TABLE deliveries ADD COLUMN customer_phone VARCHAR(30) NULL;
+ALTER TABLE deliveries ADD COLUMN sms_opt_in BOOLEAN NOT NULL DEFAULT FALSE;

@@ -1,0 +1,1 @@
+package com.fooddelivery.mail.repository;import com.fooddelivery.mail.entity.MailDelivery;import org.springframework.data.jpa.repository.JpaRepository;public interface MailDeliveryRepository extends JpaRepository<MailDelivery,Long>{}

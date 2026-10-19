@@ -1,0 +1,4 @@
+package com.order.order_service.entity;
+import jakarta.persistence.*;import java.time.LocalDateTime;
+@Entity @Table(name="coupon_redemptions",uniqueConstraints={@UniqueConstraint(name="uk_coupon_user",columnNames={"coupon_id","user_id"}),@UniqueConstraint(name="uk_redemption_order",columnNames="order_id")})
+public class CouponRedemption {@Id @GeneratedValue(strategy=GenerationType.IDENTITY)private Long id;@Column(name="coupon_id",nullable=false)private Long couponId;@Column(name="user_id",nullable=false)private Long userId;@Column(name="order_id",nullable=false)private Long orderId;@Column(name="redeemed_at",insertable=false,updatable=false)private LocalDateTime redeemedAt;protected CouponRedemption(){}public CouponRedemption(Long couponId,Long userId,Long orderId){this.couponId=couponId;this.userId=userId;this.orderId=orderId;}public Long getCouponId(){return couponId;}public Long getUserId(){return userId;}public Long getOrderId(){return orderId;}}

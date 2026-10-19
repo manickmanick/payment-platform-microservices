@@ -1,0 +1,4 @@
+package com.ecommerce.user_service.entity;
+import jakarta.persistence.*;import java.time.LocalDateTime;
+@Entity @Table(name="favorite_restaurants",uniqueConstraints=@UniqueConstraint(name="uk_favorite_user_restaurant",columnNames={"user_id","restaurant_id"}))
+public class FavoriteRestaurant{@Id @GeneratedValue(strategy=GenerationType.IDENTITY)private Long id;@Column(name="user_id",nullable=false)private Long userId;@Column(name="restaurant_id",nullable=false)private Long restaurantId;@Column(name="created_at",insertable=false,updatable=false)private LocalDateTime createdAt;protected FavoriteRestaurant(){}public FavoriteRestaurant(Long userId,Long restaurantId){this.userId=userId;this.restaurantId=restaurantId;}public Long getId(){return id;}public Long getUserId(){return userId;}public Long getRestaurantId(){return restaurantId;}public LocalDateTime getCreatedAt(){return createdAt;}}
