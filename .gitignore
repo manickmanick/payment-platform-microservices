@@ -1,3 +1,14 @@
 .env
 .env.*
 !.env.example
+
+# Maven build output
+**/target/
+
+# IntelliJ
+.idea/
+*.iml
+
+# Environment variables and secrets
+.env
+**/.env
