@@ -1,0 +1,2 @@
+ALTER TABLE user_addresses
+ADD COLUMN primary_address BOOLEAN NOT NULL DEFAULT FALSE;
