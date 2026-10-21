@@ -23,9 +23,9 @@ services:
       SERVER_PORT: 8085
       JWT_SECRET: ${JWT_SECRET:-please_set_a_random_32_byte_minimum_secret}
       FRONTEND_URL: http://localhost:3000
-      USER_DB_URL: ${USER_DB_URL:-jdbc:mysql://host.docker.internal:3306/ecommerce_user_db}
-      USER_DB_USERNAME: ${USER_DB_USERNAME:-root}
-      USER_DB_PASSWORD: ${USER_DB_PASSWORD:-}
+      USER_DB_URL: ${USER_DB_URL}
+      USER_DB_USERNAME: ${USER_DB_USERNAME}
+      USER_DB_PASSWORD: ${USER_DB_PASSWORD}
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       DRIVER_EMAILS: ${DRIVER_EMAILS:-}
       RESTAURANT_OWNER_EMAILS: ${RESTAURANT_OWNER_EMAILS:-}
@@ -38,7 +38,7 @@ services:
     build: ./catalog-service
     env_file: .env
     environment:
-      CATALOG_DB_URL: ${CATALOG_DB_URL:-jdbc:mysql://host.docker.internal:3306/catalog_db}
+      CATALOG_DB_URL: ${CATALOG_DB_URL:-}
       JWT_SECRET: ${JWT_SECRET:-please_set_a_random_32_byte_minimum_secret}
       CATALOG_DB_USERNAME: ${CATALOG_DB_USERNAME:-root}
       CATALOG_DB_PASSWORD: ${CATALOG_DB_PASSWORD:-}
@@ -50,7 +50,7 @@ services:
     build: ./delivery-service
     env_file: .env
     environment:
-      DELIVERY_DB_URL: ${DELIVERY_DB_URL:-jdbc:mysql://host.docker.internal:3306/delivery_db}
+      DELIVERY_DB_URL: ${DELIVERY_DB_URL:-}
       JWT_SECRET: ${JWT_SECRET:-please_set_a_random_32_byte_minimum_secret}
       DELIVERY_INTERNAL_KEY: ${DELIVERY_INTERNAL_KEY:-local-internal-key-change-me}
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
@@ -66,7 +66,7 @@ services:
     build: ./mail-service
     env_file: .env
     environment:
-      MAIL_DB_URL: ${MAIL_DB_URL:-jdbc:mysql://host.docker.internal:3306/mail_db}
+      MAIL_DB_URL: ${MAIL_DB_URL:-}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       MAIL_INTERNAL_KEY: ${MAIL_INTERNAL_KEY:-local-mail-key-change-me}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
@@ -79,7 +79,7 @@ services:
       dockerfile: order-service/Dockerfile
     env_file: .env
     environment:
-      ORDER_DB_URL: ${ORDER_DB_URL:-jdbc:mysql://host.docker.internal:3306/order_db}
+      ORDER_DB_URL: ${ORDER_DB_URL:-}
       CATALOG_SERVICE_URL: http://catalog-service:8086
       CATALOG_INTERNAL_KEY: ${CATALOG_INTERNAL_KEY:-local-internal-key-change-me}
       PAYMENT_SERVICE_URL: http://payment-service:8081
@@ -98,7 +98,7 @@ services:
     build: ./payment-service
     env_file: .env
     environment:
-      PAYMENT_DB_URL: ${PAYMENT_DB_URL:-jdbc:mysql://host.docker.internal:3306/payment_db}
+      PAYMENT_DB_URL: ${PAYMENT_DB_URL:-}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
       PAYMENT_INTERNAL_KEY: ${PAYMENT_INTERNAL_KEY:-local-payment-key-change-me}

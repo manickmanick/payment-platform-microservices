@@ -1,121 +1,204 @@
+
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:8084}
+
 spring:
   application:
     name: api-gateway
+
   cloud:
     gateway:
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
-            allowedMethods: [GET,POST,PUT,PATCH,DELETE,OPTIONS]
-            allowedHeaders: [Authorization,Content-Type,Idempotency-Key]
-            allowCredentials: true
-      default-filters:
-        - AddResponseHeader=X-Content-Type-Options, nosniff
-        - AddResponseHeader=X-Frame-Options, DENY
-        - name: CircuitBreaker
-          args:
-            name: backendServices
-            fallbackUri: forward:/fallback
-        - name: Retry
-          args:
-            retries: 2
-            methods: GET
-            statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE,GATEWAY_TIMEOUT
-            backoff:
-              firstBackoff: 100ms
-              maxBackoff: 500ms
-              factor: 2
-      routes:
-        - id: auth
-          uri: ${USER_SERVICE_URL:http://localhost:8085}
-          predicates: [Path=/api/v1/auth/**]
-          filters:
-            - StripPrefix=2
-            - PrefixPath=/api
-        - id: google-login
-          uri: ${USER_SERVICE_URL:http://localhost:8085}
-          predicates: [Path=/api/v1/oauth2/**]
-          filters: [StripPrefix=2]
-        - id: google-callback
-          uri: ${USER_SERVICE_URL:http://localhost:8085}
-          predicates: [Path=/api/v1/login/oauth2/**]
-          filters: [StripPrefix=2]
-        - id: users
-          uri: ${USER_SERVICE_URL:http://localhost:8085}
-          predicates: [Path=/api/v1/users,/api/v1/users/**]
-          filters: [StripPrefix=2, PrefixPath=/api]
-        - id: restaurants
-          uri: ${CATALOG_SERVICE_URL:http://localhost:8086}
-          predicates: [Path=/api/v1/restaurants,/api/v1/restaurants/**]
-          filters: [StripPrefix=2]
-        - id: catalog-upload
-          uri: ${CATALOG_SERVICE_URL:http://localhost:8086}
-          predicates: [Path=/api/v1/menu-items,/api/v1/menu-items/**]
-          filters: [StripPrefix=2]
-        - id: catalog-admin
-          uri: ${CATALOG_SERVICE_URL:http://localhost:8086}
-          predicates: [Path=/api/v1/catalog-admin/**]
-          filters: [StripPrefix=3]
-        - id: categories
-          uri: ${CATALOG_SERVICE_URL:http://localhost:8086}
-          predicates: [Path=/api/v1/categories,/api/v1/categories/**]
-          filters: [StripPrefix=2]
-        - id: delivery-order-actions
-          uri: ${DELIVERY_SERVICE_URL:http://localhost:8087}
-          predicates: [Path=/api/v1/orders/*/driver-location,/api/v1/orders/*/status]
-          filters: [StripPrefix=2]
-        - id: orders
-          uri: ${ORDER_SERVICE_URL:http://localhost:8082}
-          predicates: [Path=/api/v1/orders,/api/v1/orders/**]
-          filters: [StripPrefix=2]
-        - id: admin-order-reports
-          uri: ${ORDER_SERVICE_URL:http://localhost:8082}
-          predicates: [Path=/api/v1/admin/**]
-          filters: [StripPrefix=2]
-        - id: coupons
-          uri: ${ORDER_SERVICE_URL:http://localhost:8082}
-          predicates: [Path=/api/v1/coupons,/api/v1/coupons/**]
-          filters: [StripPrefix=2]
-        - id: cart
-          uri: ${ORDER_SERVICE_URL:http://localhost:8082}
-          predicates: [Path=/api/v1/cart,/api/v1/cart/**]
-          filters: [StripPrefix=2]
-        - id: payments
-          uri: ${PAYMENT_SERVICE_URL:http://localhost:8081}
-          predicates: [Path=/api/v1/payments,/api/v1/payments/**]
-          filters: [StripPrefix=2]
-        - id: drivers
-          uri: ${DELIVERY_SERVICE_URL:http://localhost:8087}
-          predicates: [Path=/api/v1/drivers/**]
-          filters: [StripPrefix=2]
-        - id: notifications
-          uri: ${DELIVERY_SERVICE_URL:http://localhost:8087}
-          predicates: [Path=/api/v1/notifications/**]
-          filters: [StripPrefix=2]
-      httpclient:
-        connect-timeout: 2000
-        response-timeout: 5s
+      server:
+        webflux:
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders:
+                  - Authorization
+                  - Content-Type
+                  - Idempotency-Key
+                  - X-Internal-Key
+                  - Accept
+                  - Origin
+                allowCredentials: true
+
+          default-filters:
+            - AddResponseHeader=X-Content-Type-Options, nosniff
+            - AddResponseHeader=X-Frame-Options, DENY
+            - name: CircuitBreaker
+              args:
+                name: backendServices
+                fallbackUri: forward:/fallback
+            - name: Retry
+              args:
+                retries: 2
+                methods:
+                  - GET
+                statuses:
+                  - BAD_GATEWAY
+                  - SERVICE_UNAVAILABLE
+                  - GATEWAY_TIMEOUT
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 500ms
+                  factor: 2
+
+          routes:
+            - id: auth
+              uri: ${USER_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/api/v1/auth/**
+              filters:
+                - StripPrefix=2
+                - PrefixPath=/api
+
+            - id: google-login
+              uri: ${USER_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/api/v1/oauth2/**
+              filters:
+                - StripPrefix=2
+
+            - id: google-callback
+              uri: ${USER_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/api/v1/login/oauth2/**
+              filters:
+                - StripPrefix=2
+
+            - id: users
+              uri: ${USER_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/api/v1/users,/api/v1/users/**
+              filters:
+                - StripPrefix=2
+                - PrefixPath=/api
+
+            - id: restaurants
+              uri: ${CATALOG_SERVICE_URL:http://localhost:8086}
+              predicates:
+                - Path=/api/v1/restaurants,/api/v1/restaurants/**
+              filters:
+                - StripPrefix=2
+
+            - id: catalog-upload
+              uri: ${CATALOG_SERVICE_URL:http://localhost:8086}
+              predicates:
+                - Path=/api/v1/menu-items,/api/v1/menu-items/**
+              filters:
+                - StripPrefix=2
+
+            - id: catalog-admin
+              uri: ${CATALOG_SERVICE_URL:http://localhost:8086}
+              predicates:
+                - Path=/api/v1/catalog-admin/**
+              filters:
+                - StripPrefix=3
+
+            - id: categories
+              uri: ${CATALOG_SERVICE_URL:http://localhost:8086}
+              predicates:
+                - Path=/api/v1/categories,/api/v1/categories/**
+              filters:
+                - StripPrefix=2
+
+            - id: delivery-order-actions
+              uri: ${DELIVERY_SERVICE_URL:http://localhost:8087}
+              predicates:
+                - Path=/api/v1/orders/*/driver-location,/api/v1/orders/*/status
+              filters:
+                - StripPrefix=2
+
+            - id: orders
+              uri: ${ORDER_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/orders,/api/v1/orders/**
+              filters:
+                - StripPrefix=2
+
+            - id: admin-order-reports
+              uri: ${ORDER_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/admin/**
+              filters:
+                - StripPrefix=2
+
+            - id: coupons
+              uri: ${ORDER_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/coupons,/api/v1/coupons/**
+              filters:
+                - StripPrefix=2
+
+            - id: cart
+              uri: ${ORDER_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/cart,/api/v1/cart/**
+              filters:
+                - StripPrefix=2
+
+            - id: payments
+              uri: ${PAYMENT_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/v1/payments,/api/v1/payments/**
+              filters:
+                - StripPrefix=2
+
+            - id: drivers
+              uri: ${DELIVERY_SERVICE_URL:http://localhost:8087}
+              predicates:
+                - Path=/api/v1/drivers/**
+              filters:
+                - StripPrefix=2
+
+            - id: notifications
+              uri: ${DELIVERY_SERVICE_URL:http://localhost:8087}
+              predicates:
+                - Path=/api/v1/notifications/**
+              filters:
+                - StripPrefix=2
+
+          httpclient:
+            connect-timeout: 2000
+            response-timeout: 5s
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus,metrics
+        include: health,info,prometheus,metrics,gateway
+
+  endpoint:
+    gateway:
+      access: unrestricted
+
   tracing:
     sampling:
       probability: ${TRACING_SAMPLING:1.0}
+
   otlp:
     tracing:
       endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+
   metrics:
     distribution:
       percentiles-histogram:
         http.server.requests: true
+
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
 resilience4j:
   circuitbreaker:
     instances:

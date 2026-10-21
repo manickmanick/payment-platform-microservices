@@ -46,9 +46,23 @@ export default function LoginPage() {
     try {
       setIsSubmitting(true);
       const response = await loginUser({ email, password });
-      const { accessToken, userId, name, email, role = "ROLE_USER" } = response.data;
-      const user = response.data.user || { id: userId, name, email, role: role.replace(/^ROLE_/, "") };
+      // const { accessToken, userId, name, email, role = "ROLE_USER" } = response.data;
+      // const user = response.data.user || { id: userId, name, email, role: role.replace(/^ROLE_/, "") };
 
+      const {
+        accessToken,
+        userId,
+        name,
+        email: responseEmail,
+        role = "ROLE_USER",
+      } = response.data;
+
+      const user = response.data.user || {
+        id: userId,
+        name,
+        email: responseEmail,
+        role: role.replace(/^ROLE_/, ""),
+      };
       localStorage.setItem("token", accessToken);
       localStorage.setItem("user", JSON.stringify(user));
       dispatch(loginSuccess(user));
