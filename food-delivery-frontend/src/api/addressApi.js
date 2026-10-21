@@ -1,14 +1,25 @@
+
 import api from "./axios";
 
 export const getAddresses = () => {
   return api.get("/users/me/addresses");
 };
 
-export const getAddressById = (id) => {
-  return api.get("/users/me/addresses").then((response) => ({
+export const getAddressById = async (id) => {
+  const response = await getAddresses();
+
+  const address = response.data.find(
+      (item) => item.id === Number(id)
+  );
+
+  if (!address) {
+    throw new Error("Address not found");
+  }
+
+  return {
     ...response,
-    data: response.data.find((address) => address.id === id),
-  }));
+    data: address,
+  };
 };
 
 export const createAddress = (data) => {
