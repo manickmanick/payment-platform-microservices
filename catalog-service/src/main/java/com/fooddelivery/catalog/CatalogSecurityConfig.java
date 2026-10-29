@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class CatalogSecurityConfig {
-    @Bean JwtDecoder catalogJwtDecoder(@Value("${JWT_SECRET:change-this-development-secret-to-at-least-32-bytes}") String secret) {
+    @Bean JwtDecoder catalogJwtDecoder(@Value("${app.jwt.secret}") String secret) {
         return NimbusJwtDecoder.withSecretKey(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8),"HmacSHA256")).macAlgorithm(MacAlgorithm.HS256).build();
     }
     @Bean SecurityFilterChain catalogSecurity(HttpSecurity http) throws Exception {

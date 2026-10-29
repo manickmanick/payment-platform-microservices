@@ -170,7 +170,7 @@ spring:
 
           httpclient:
             connect-timeout: 2000
-            response-timeout: 5s
+            response-timeout: 30s
 
 management:
   endpoints:
@@ -196,15 +196,23 @@ management:
         http.server.requests: true
 
 logging:
-
   level:
-    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway: TRACE
     org.springframework.security: DEBUG
+    org.springframework.cloud.gateway.filter.factory: TRACE
+    io.github.resilience4j: DEBUG
+    reactor.netty.http.client: DEBUG
 
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
 
+
 resilience4j:
+  timelimiter:
+    instances:
+      backendServices:
+        timeout-duration: 30s
+
   circuitbreaker:
     instances:
       backendServices:

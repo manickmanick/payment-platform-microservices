@@ -23,3 +23,15 @@ catalog:
 order-service:
   url: ${ORDER_SERVICE_URL:http://localhost:8082}
 logging.pattern.level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
+
+logging:
+  level:
+    root: INFO
+    com.fooddelivery.catalog: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.cloud.gateway: DEBUG

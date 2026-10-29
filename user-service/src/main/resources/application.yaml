@@ -44,7 +44,7 @@ app:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
   secret-code: ${SECRET_CODE_RESTAURANT_OWNER}
   jwt:
-    secret: ${JWT_SECRET:change-this-development-secret-to-at-least-32-bytes}
+    secret: ${JWT_SECRET}
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
 
 management:
