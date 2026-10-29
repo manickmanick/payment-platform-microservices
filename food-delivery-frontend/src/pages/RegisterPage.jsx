@@ -11,13 +11,16 @@ export default function RegisterPage() {
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
+    isRestaurantOwner: false,
+    secretCode: "",
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
 
-  // 2. Client-side Form Validation
+  // Validate the form before sending the registration request
   const validateForm = () => {
     const localErrors = {};
 
@@ -37,7 +40,19 @@ export default function RegisterPage() {
       localErrors.password = "Password must be at least 8 characters long";
     }
 
+    if (!form.confirmPassword.trim()) {
+      localErrors.confirmPassword = "Please confirm your password";
+    } else if (form.password !== form.confirmPassword) {
+      localErrors.confirmPassword = "Passwords do not match";
+    }
+
+    // A restaurant owner must provide a secret code
+    if (form.isRestaurantOwner && !form.secretCode.trim()) {
+      localErrors.secretCode = "Secret code is required";
+    }
+
     setErrors(localErrors);
+
     return Object.keys(localErrors).length === 0;
   };
 
@@ -49,10 +64,22 @@ export default function RegisterPage() {
 
     try {
       setLoading(true);
-      await registerUser({ name: form.name, email: form.email, password: form.password });
+
+      await registerUser({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        confirmPassword:form.confirmPassword,
+        isRestaurantOwner: form.isRestaurantOwner,
+        secretCode: form.isRestaurantOwner ? form.secretCode : undefined,
+      });
+
+      console.count("Registration submitted");
+
       setRegistered(true);
     } catch (error) {
       console.error(error);
+
       setErrors({
         api: error.response?.data?.message || "Something went wrong",
       });
@@ -61,19 +88,42 @@ export default function RegisterPage() {
     }
   };
 
-  if (registered) return <MainLayout><section className="min-h-[70vh] flex items-center justify-center px-6"><div className="max-w-lg rounded-2xl bg-white p-8 text-center shadow"><h1 className="text-3xl font-bold">Verify your email</h1><p className="mt-3 text-slate-600">We sent an account verification link to {form.email}. Verify the link before signing in.</p><Link to="/login" className="mt-6 inline-block font-semibold text-orange-600">Continue to sign in</Link></div></section></MainLayout>;
-
-  // 3. Helper to update form fields and automatically wipe out their errors on type
   const handleInputChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
 
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
-    if (errors.api) {
-      setErrors((prev) => ({ ...prev, api: "" }));
-    }
+    setErrors((prev) => ({
+      ...prev,
+      [field]: "",
+      api: "",
+    }));
   };
+
+  if (registered) {
+    return (
+      <MainLayout>
+        <section className="min-h-[70vh] flex items-center justify-center px-6">
+          <div className="max-w-lg rounded-2xl bg-white p-8 text-center shadow">
+            <h1 className="text-3xl font-bold">Verify your email</h1>
+
+             <p className="mt-3 text-slate-600">
+              We sent an account verification link to {form.email}. Verify the
+              link before signing in.
+            </p>
+
+            <Link
+              to="/login"
+              className="mt-6 inline-block font-semibold text-orange-600"
+            >
+              Continue to sign in
+            </Link>
+          </div>
+        </section>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -88,7 +138,7 @@ export default function RegisterPage() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            {/* Name Block */}
+            {/* Full Name */}
             <div>
               <Input
                 placeholder="Full Name"
@@ -96,29 +146,32 @@ export default function RegisterPage() {
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 hasError={!!errors.name}
               />
+
               {errors.name && (
                 <p className="mt-1 text-xs font-medium text-red-500 pl-1">
-                  ⚠️ {errors.name}
+                  {errors.name}
                 </p>
               )}
             </div>
 
-            {/* Email Block */}
+            {/* Email */}
             <div>
               <Input
+                type="email"
                 placeholder="Email Address"
                 value={form.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
                 hasError={!!errors.email}
               />
+
               {errors.email && (
                 <p className="mt-1 text-xs font-medium text-red-500 pl-1">
-                  ⚠️ {errors.email}
+                  {errors.email}
                 </p>
               )}
             </div>
 
-            {/* Password Block */}
+            {/* Password */}
             <div>
               <Input
                 type="password"
@@ -127,17 +180,93 @@ export default function RegisterPage() {
                 onChange={(e) => handleInputChange("password", e.target.value)}
                 hasError={!!errors.password}
               />
+
               {errors.password && (
                 <p className="mt-1 text-xs font-medium text-red-500 pl-1">
-                  ⚠️ {errors.password}
+                  {errors.password}
                 </p>
               )}
             </div>
 
-            {/* API Response Fallback Error Alert */}
+            {/* Confirm Password */}
+            <div>
+              <Input
+                type="password"
+                placeholder="Confirm Password"
+                value={form.confirmPassword}
+                onChange={(e) =>
+                  handleInputChange("confirmPassword", e.target.value)
+                }
+                hasError={!!errors.confirmPassword}
+              />
+
+              {errors.confirmPassword && (
+                <p className="mt-1 text-xs font-medium text-red-500 pl-1">
+                  {errors.confirmPassword}
+                </p>
+              )}
+            </div>
+
+            {/* Restaurant Owner Checkbox */}
+            <div className="rounded-xl border border-gray-200 p-4">
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={form.isRestaurantOwner}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+
+                    setForm((prev) => ({
+                      ...prev,
+                      isRestaurantOwner: checked,
+                      secretCode: checked ? prev.secretCode : "",
+                    }));
+
+                    setErrors((prev) => ({
+                      ...prev,
+                      secretCode: "",
+                      api: "",
+                    }));
+                  }}
+                  className="h-4 w-4 accent-orange-500"
+                />
+
+                <span className="text-sm font-medium text-gray-700">
+                  I am a Restaurant Owner
+                </span>
+              </label>
+
+              <p className="mt-2 ml-7 text-xs text-slate-500">
+                Select this option if you want to register and manage a
+                restaurant.
+              </p>
+            </div>
+
+            {/* Secret Code: visible only for restaurant owners */}
+            {form.isRestaurantOwner && (
+              <div>
+                <Input
+                  type="password"
+                  placeholder="Restaurant Owner Secret Code"
+                  value={form.secretCode}
+                  onChange={(e) =>
+                    handleInputChange("secretCode", e.target.value)
+                  }
+                  hasError={!!errors.secretCode}
+                />
+
+                {errors.secretCode && (
+                  <p className="mt-1 text-xs font-medium text-red-500 pl-1">
+                    {errors.secretCode}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Backend Error */}
             {errors.api && (
               <div className="rounded-xl border border-red-200 bg-red-50/50 px-4 py-3 text-sm text-red-600 font-medium">
-                ❌ {errors.api}
+                {errors.api}
               </div>
             )}
 
@@ -146,7 +275,11 @@ export default function RegisterPage() {
               className="w-full py-3.5 mt-2"
               disabled={loading}
             >
-              {loading ? "Creating Account..." : "Register"}
+              {loading
+                ? "Creating Account..."
+                : form.isRestaurantOwner
+                  ? "Register as Restaurant Owner"
+                  : "Register"}
             </Button>
 
             <p className="text-center text-sm text-slate-500 pt-2">

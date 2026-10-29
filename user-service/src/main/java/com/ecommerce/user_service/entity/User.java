@@ -30,10 +30,10 @@ public class User implements UserDetails {
     private String password;
 
     @Column(nullable = false)
-    private String role = "ROLE_USER";
+    private String role;
 
     @Column(name = "email_verified", nullable = false)
-    private boolean emailVerified = true;
+    private boolean emailVerified;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

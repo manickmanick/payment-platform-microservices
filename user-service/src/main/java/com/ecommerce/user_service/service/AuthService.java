@@ -41,7 +41,7 @@ public class AuthService {
         this.authTokens = authTokens;
     }
 
-    @Transactional
+//    @Transactional
     public AuthResponse register(RegisterRequest request) {
         String email = request.getEmail().trim().toLowerCase();
 
@@ -56,11 +56,11 @@ public class AuthService {
         user.setName(request.getName().trim());
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(roleFor(email));
-        user.setEmailVerified(false);
+        user.setRole(request.isRestaurantOwner() ? "ROLE_RESTAURANT_OWNER" : "ROLE_USER");
+        user.setEmailVerified(true);
 
         User savedUser = userRepository.save(user);
-        authTokens.sendVerification(savedUser);
+//        authTokens.sendVerification(savedUser);
         return createResponse(savedUser);
     }
 
