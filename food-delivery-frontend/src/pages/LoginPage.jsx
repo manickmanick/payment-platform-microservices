@@ -72,6 +72,7 @@ export default function LoginPage() {
       console.error(error);
       // Handle API message or generic fallback
       setErrors({
+         ...(responseData?.errors || {}),
         api: error.response?.data?.message || "Something went wrong",
       });
     } finally {

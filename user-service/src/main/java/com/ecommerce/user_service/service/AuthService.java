@@ -21,6 +21,9 @@ public class AuthService {
     @Value("${app.admin-emails:}")
     private String adminEmails;
 
+    @Value("${app.secret-code}")
+    public String secretCode;
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -50,6 +53,13 @@ public class AuthService {
                     HttpStatus.CONFLICT,
                     "Email is already registered"
             );
+        }
+
+        System.out.println("user entered: " + request.getSecretCode());
+        System.out.println("env secretCode: " + secretCode );
+
+        if(!request.getSecretCode().equals(secretCode)){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid restaurant owner secret code");
         }
 
         User user = new User();

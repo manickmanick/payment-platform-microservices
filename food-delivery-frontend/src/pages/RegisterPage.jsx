@@ -78,9 +78,12 @@ export default function RegisterPage() {
 
       setRegistered(true);
     } catch (error) {
-      console.error(error);
+      // console.error(error);
+
+       const responseData = error.response?.data;
 
       setErrors({
+           ...(responseData?.errors || {}),
         api: error.response?.data?.message || "Something went wrong",
       });
     } finally {

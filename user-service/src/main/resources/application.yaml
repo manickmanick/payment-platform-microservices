@@ -42,6 +42,7 @@ app:
   driver-emails: ${DRIVER_EMAILS:}
   restaurant-owner-emails: ${RESTAURANT_OWNER_EMAILS:}
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  secret-code: ${SECRET_CODE_RESTAURANT_OWNER}
   jwt:
     secret: ${JWT_SECRET:change-this-development-secret-to-at-least-32-bytes}
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}

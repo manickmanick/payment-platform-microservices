@@ -1,6 +1,7 @@
 package com.ecommerce.user_service.config;
 
 import com.ecommerce.user_service.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -63,7 +64,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder(
-            @org.springframework.beans.factory.annotation.Value(
+            @Value(
                     "${app.jwt.secret}") String secret
     ) {
         SecretKey key = new SecretKeySpec(
