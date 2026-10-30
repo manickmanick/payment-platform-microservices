@@ -1,6 +1,7 @@
 
 package com.fooddelivery.catalog;
 
+import com.fooddelivery.catalog.dto.menu.CreateMenuRequest;
 import com.fooddelivery.catalog.service.CatalogService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -311,7 +312,7 @@ public class CatalogController {
  @ResponseStatus(HttpStatus.CREATED)
  public Map<String, Object> createMenu(
          @AuthenticationPrincipal Jwt jwt,
-         @Valid @RequestBody MenuRequest request) {
+         @Valid @RequestBody CreateMenuRequest request) {
 
   long actor = manager(jwt);
 
@@ -337,7 +338,7 @@ public class CatalogController {
  public Map<String, Object> updateMenu(
          @AuthenticationPrincipal Jwt jwt,
          @PathVariable long id,
-         @Valid @RequestBody MenuRequest request) {
+         @Valid @RequestBody CreateMenuRequest request) {
 
   long actor = manager(jwt);
 
@@ -515,30 +516,5 @@ public class CatalogController {
          String status) {
  }
 
- public record MenuRequest(
-         @NotNull
-         Long restaurantId,
 
-         @NotNull
-         Long categoryId,
-
-         @NotBlank
-         @Size(max = 160)
-         String name,
-
-         @NotBlank
-         @Size(max = 1000)
-         String description,
-
-         @NotNull
-         @DecimalMin("0.01")
-         BigDecimal price,
-
-         @NotBlank
-         @Pattern(regexp = "VEG|NON_VEG")
-         String foodType,
-
-         @NotNull
-         Boolean available) {
- }
 }

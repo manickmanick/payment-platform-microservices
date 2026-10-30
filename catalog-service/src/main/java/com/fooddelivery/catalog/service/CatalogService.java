@@ -567,7 +567,6 @@ public class CatalogService {
             } else {
                 MenuItem menuItem = item(id);
                 authorize(menuItem.getRestaurant(), actor, admin);
-                menuItem.setImageUrl(url);
             }
 
             return url;
@@ -694,7 +693,6 @@ public class CatalogService {
         result.put("stockQuantity", item.getStockQuantity());
         result.put("averageRating", item.getAverageRating());
         result.put("reviewCount", item.getReviewCount());
-        result.put("imageUrl", item.getImageUrl());
         return result;
     }
 }

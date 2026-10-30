@@ -25,11 +25,11 @@ export default function MenuItemCard({ item }) {
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-col md:flex-row">
-        <img
-          src={
-            item.imageUrls?.[0] ||
-            "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"
-          }
+        <img src=""
+          // src={
+            // item.imageUrls?.[0] ||
+            // "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"
+          // }
           alt={item.name}
           className="h-48 w-full object-cover md:w-64"
         />
