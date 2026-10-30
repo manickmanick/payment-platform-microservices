@@ -1,2 +1,18 @@
-package com.order.order_service.repository; import com.order.order_service.entity.CartItem; import java.util.List; import java.util.Optional; import org.springframework.data.jpa.repository.JpaRepository;
-public interface CartItemRepository extends JpaRepository<CartItem,Long>{List<CartItem> findByUserIdOrderById(Long userId);Optional<CartItem> findByIdAndUserId(Long id,Long userId);Optional<CartItem> findByUserIdAndMenuItemId(Long userId,Long menuItemId);void deleteByUserId(Long userId);}
+package com.order.order_service.repository;
+
+import com.order.order_service.entity.CartItem;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface CartItemRepository extends JpaRepository<CartItem, Long> {
+    List<CartItem> findByUserIdOrderById(Long userId);
+
+    Optional<CartItem> findByIdAndUserId(Long id, Long userId);
+
+    Optional<CartItem> findByUserIdAndMenuItemId(Long userId, Long menuItemId);
+
+    void deleteByUserId(Long userId);
+}
