@@ -7,6 +7,7 @@ import Button from "../components/ui/Button";
 import { getAddresses } from "../api/addressApi";
 import { getCart } from "../api/cartApi";
 import { quoteCoupon } from "../api/promotionApi";
+import {placeOrder} from "../api/orderApi"
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -18,6 +19,8 @@ export default function CheckoutPage() {
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
 
   useEffect(() => {
     loadData();
@@ -39,24 +42,112 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleContinue = () => {
-    if (!selectedAddress) return;
-    const proceed = (coordinates = null) => navigate("/payment", { state: {
-        deliveryAddress: [selectedAddress.line1, selectedAddress.line2, selectedAddress.city, selectedAddress.state, selectedAddress.postalCode, selectedAddress.country].filter(Boolean).join(", "),
-        amount: Math.max(0, Number(cart.total)-couponDiscount) + (Number(cart.total)>=499?0:49) + Math.max(0,(Number(cart.total)-couponDiscount)*0.05),
-        couponCode: couponCode.trim().toUpperCase(),
-        coordinates,
-        customerPhone: selectedAddress.phoneNumber || "",
-        smsOptIn: Boolean(selectedAddress.smsOptIn),
-      }});
-    if (navigator.geolocation) navigator.geolocation.getCurrentPosition((position)=>proceed({latitude:position.coords.latitude,longitude:position.coords.longitude}),()=>proceed());
-    else proceed();
+  const handleContinue = async () => {
+    if (!selectedAddress || isCreatingCheckout) return;
+
+    setCheckoutError("");
+    setIsCreatingCheckout(true);
+
+    try {
+      const proceed = async (coordinates = null) => {
+        
+        let key = sessionStorage.getItem("checkoutIdempotencyKey");
+
+        if (!key) {
+          key = crypto.randomUUID();
+          sessionStorage.setItem("checkoutIdempotencyKey", key);
+        }
+
+        const deliveryAddress = [
+          selectedAddress.line1,
+          selectedAddress.line2,
+          selectedAddress.city,
+          selectedAddress.state,
+          selectedAddress.postalCode,
+          selectedAddress.country,
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        const { data: payment } = await placeOrder(
+          deliveryAddress,
+          couponCode?.trim().toUpperCase(),
+          coordinates,
+          selectedAddress.phoneNumber || "",
+          Boolean(selectedAddress.smsOptIn),
+        );
+
+        if (!payment?.clientSecret || !payment?.orderId) {
+          throw new Error("Checkout initialization response is incomplete.");
+        }
+
+        navigate("/payment", {
+          state: {
+            orderId: payment.orderId,
+            paymentId: payment.paymentId,
+            clientSecret: payment.clientSecret,
+            amount: payment.total,
+          },
+        });
+      };
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            proceed({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            })
+              .catch((error) => {
+                setCheckoutError(
+                  error.response?.data?.message ||
+                    error.message ||
+                    "Unable to initialize checkout.",
+                );
+              })
+              .finally(() => setIsCreatingCheckout(false));
+          },
+          () => {
+            proceed()
+              .catch((error) => {
+                setCheckoutError(
+                  error.response?.data?.message ||
+                    error.message ||
+                    "Unable to initialize checkout.",
+                );
+              })
+              .finally(() => setIsCreatingCheckout(false));
+          },
+        );
+      } else {
+        await proceed();
+        setIsCreatingCheckout(false);
+      }
+    } catch (error) {
+      setCheckoutError(
+        error.response?.data?.message ||
+          error.message ||
+          "Unable to initialize checkout.",
+      );
+      setIsCreatingCheckout(false);
+    }
   };
 
   const applyCoupon = async () => {
-    setCouponMessage("");setCouponDiscount(0);
-    try { const { data } = await quoteCoupon(couponCode.trim().toUpperCase(), cart?.total || 0); setCouponDiscount(Number(data.discount || 0)); setCouponMessage("Coupon applied."); }
-    catch (e) { setCouponMessage(e.response?.data?.message || "Coupon could not be applied."); }
+    setCouponMessage("");
+    setCouponDiscount(0);
+    try {
+      const { data } = await quoteCoupon(
+        couponCode.trim().toUpperCase(),
+        cart?.total || 0,
+      );
+      setCouponDiscount(Number(data.discount || 0));
+      setCouponMessage("Coupon applied.");
+    } catch (e) {
+      setCouponMessage(
+        e.response?.data?.message || "Coupon could not be applied.",
+      );
+    }
   };
 
   if (loading) {
@@ -99,9 +190,7 @@ export default function CheckoutPage() {
                       <h3 className="font-semibold text-gray-800">
                         {address.label}
                       </h3>
-                      <p className="text-gray-600 mt-1">
-                        {address.line1}
-                      </p>
+                      <p className="text-gray-600 mt-1">{address.line1}</p>
                       {address.line2 && (
                         <p className="text-gray-600">{address.line2}</p>
                       )}
@@ -143,11 +232,79 @@ export default function CheckoutPage() {
               </div>
 
               <div className="mt-6 border-t pt-6">
-                <label className="mb-2 block text-sm font-medium text-gray-700" htmlFor="coupon-code">Coupon code</label>
-                <div className="mb-4 flex gap-2"><input id="coupon-code" value={couponCode} onChange={(event) => { setCouponCode(event.target.value); setCouponDiscount(0); setCouponMessage(""); }} maxLength={40} placeholder="Enter coupon code (optional)" className="w-full rounded-lg border border-gray-300 px-3 py-2" /><button type="button" onClick={applyCoupon} disabled={!couponCode.trim()} className="rounded-lg border px-4 py-2 disabled:opacity-50">Apply</button></div>
-                {couponMessage&&<p role="status" className="mb-3 text-sm text-slate-600">{couponMessage}</p>}
-                <div className="space-y-2 text-sm"><div className="flex justify-between"><span>Subtotal</span><span>₹{cart?.total||0}</span></div><div className="flex justify-between"><span>Discount</span><span>-₹{couponDiscount.toFixed(2)}</span></div><div className="flex justify-between"><span>Delivery fee</span><span>₹{Number(cart?.total||0)>=499?"0.00":"49.00"}</span></div><div className="flex justify-between"><span>Estimated tax (5%)</span><span>₹{((Number(cart?.total||0)-couponDiscount)*0.05).toFixed(2)}</span></div></div>
-                <div className="mt-3 flex justify-between border-t pt-3 text-xl font-bold text-gray-900"><span>Estimated total</span><span>₹{(Math.max(0,Number(cart?.total||0)-couponDiscount)+Math.max(0,Number(cart?.total||0)>=499?0:49)+Math.max(0,(Number(cart?.total||0)-couponDiscount)*0.05)).toFixed(2)}</span></div>
+                <label
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                  htmlFor="coupon-code"
+                >
+                  Coupon code
+                </label>
+                <div className="mb-4 flex gap-2">
+                  <input
+                    id="coupon-code"
+                    value={couponCode}
+                    onChange={(event) => {
+                      setCouponCode(event.target.value);
+                      setCouponDiscount(0);
+                      setCouponMessage("");
+                    }}
+                    maxLength={40}
+                    placeholder="Enter coupon code (optional)"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                  <button
+                    type="button"
+                    onClick={applyCoupon}
+                    disabled={!couponCode.trim()}
+                    className="rounded-lg border px-4 py-2 disabled:opacity-50"
+                  >
+                    Apply
+                  </button>
+                </div>
+                {couponMessage && (
+                  <p role="status" className="mb-3 text-sm text-slate-600">
+                    {couponMessage}
+                  </p>
+                )}
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span>₹{cart?.total || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Discount</span>
+                    <span>-₹{couponDiscount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Delivery fee</span>
+                    <span>
+                      ₹{Number(cart?.total || 0) >= 499 ? "0.00" : "49.00"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Estimated tax (5%)</span>
+                    <span>
+                      ₹
+                      {(
+                        (Number(cart?.total || 0) - couponDiscount) *
+                        0.05
+                      ).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-3 flex justify-between border-t pt-3 text-xl font-bold text-gray-900">
+                  <span>Estimated total</span>
+                  <span>
+                    ₹
+                    {(
+                      Math.max(0, Number(cart?.total || 0) - couponDiscount) +
+                      Math.max(0, Number(cart?.total || 0) >= 499 ? 0 : 49) +
+                      Math.max(
+                        0,
+                        (Number(cart?.total || 0) - couponDiscount) * 0.05,
+                      )
+                    ).toFixed(2)}
+                  </span>
+                </div>
 
                 {/* Helpful Validation Message */}
                 {!selectedAddress && (
@@ -156,12 +313,20 @@ export default function CheckoutPage() {
                   </p>
                 )}
 
+                {checkoutError && (
+                  <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                    {checkoutError}
+                  </p>
+                )}
+
                 <Button
                   className="mt-4 w-full"
                   onClick={handleContinue}
-                  disabled={!selectedAddress}
+                  disabled={!selectedAddress || isCreatingCheckout}
                 >
-                  Continue To Payment
+                  {isCreatingCheckout
+                    ? "Preparing your order..."
+                    : "Continue To Payment"}
                 </Button>
               </div>
             </div>

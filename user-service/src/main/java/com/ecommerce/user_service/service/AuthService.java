@@ -55,10 +55,8 @@ public class AuthService {
             );
         }
 
-        System.out.println("user entered: " + request.getSecretCode());
-        System.out.println("env secretCode: " + secretCode );
 
-        if(!request.getSecretCode().equals(secretCode)){
+        if(request.isRestaurantOwner() && !request.getSecretCode().equals(secretCode)){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid restaurant owner secret code");
         }
 

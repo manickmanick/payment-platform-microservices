@@ -1,18 +1,20 @@
-
 package com.payment.service.service.messaging;
 
 import com.order.order_service.avro.OrderCreatedEvent;
 import com.payment.service.service.OrderEventAuditService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.stereotype.Component;
 
-import java.nio.ByteBuffer;
 import org.apache.avro.Conversions;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
+
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Component;
+
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 @Component
 @Slf4j
@@ -20,6 +22,17 @@ import java.math.BigDecimal;
 public class OrderEventConsumer {
 
     private final OrderEventAuditService orderEventAuditService;
+
+    private static final LogicalTypes.Decimal DECIMAL_TYPE =
+            LogicalTypes.decimal(12, 2);
+
+    private static final Schema DECIMAL_SCHEMA =
+            DECIMAL_TYPE.addToSchema(
+                    Schema.create(Schema.Type.BYTES)
+            );
+
+    private static final Conversions.DecimalConversion DECIMAL_CONVERSION =
+            new Conversions.DecimalConversion();
 
     @KafkaListener(
             topics = "order-created",
@@ -40,7 +53,7 @@ public class OrderEventConsumer {
                 event.getOrderId(),
                 event.getUserId(),
                 amount,
-                "INR"
+                event.getCurrency().toString()
         );
 
         log.info(
@@ -51,17 +64,10 @@ public class OrderEventConsumer {
 
     private BigDecimal convertAmount(ByteBuffer bytes) {
 
-        LogicalTypes.Decimal decimalType =
-                LogicalTypes.decimal(12, 2);
-
-        Schema decimalSchema = decimalType.addToSchema(
-                Schema.create(Schema.Type.BYTES)
-        );
-
-        return new Conversions.DecimalConversion().fromBytes(
+        return DECIMAL_CONVERSION.fromBytes(
                 bytes.duplicate(),
-                decimalSchema,
-                decimalType
+                DECIMAL_SCHEMA,
+                DECIMAL_TYPE
         );
     }
 }

@@ -1,23 +1,28 @@
 {
-"type": "record",
-"name": "OrderCreatedEvent",
-"namespace": "com.order.order_service.avro",
-"fields":[
-        {
-             "name": "eventId",
-             "type": "string"
-           },
-           {
-             "name": "orderI",
-             "type": "long"
-           },
-           {
-             "name": "userId",
-             "type": "long"
-           },
-            {
-              "name": "amount",
-              "type": "bytes"
-            }
-]
+  "type": "record",
+  "name": "OrderCreatedEvent",
+  "namespace": "com.order.order_service.avro",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": "string"
+    },
+    {
+      "name": "orderId",
+      "type": "long"
+    },
+    {
+      "name": "userId",
+      "type": "long"
+    },
+    {
+      "name": "amount",
+      "type": "bytes"
+    },
+    {
+      "name": "currency",
+      "type": "string",
+      "default": "INR"
+    }
+  ]
 }

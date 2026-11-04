@@ -31,10 +31,10 @@ public class OutboxEvent {
     @Column(name = "event_type", nullable = false, length = 100)
     private String eventType;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String topic;
 
-    @Column(name = "message_key", nullable = false)
+    @Column(name = "message_key", nullable = false, length = 255)
     private String messageKey;
 
     @Column(nullable = false, columnDefinition = "json")
@@ -42,6 +42,18 @@ public class OutboxEvent {
 
     @Column(nullable = false, length = 20)
     private String status = "PENDING";
+
+    @Column(nullable = false)
+    private Integer attempts = 0;
+
+    @Column(name = "next_attempt_at")
+    private LocalDateTime nextAttemptAt;
+
+    @Column(name = "last_error", columnDefinition = "TEXT")
+    private String lastError;
+
+    @Column(name = "claimed_at")
+    private LocalDateTime claimedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -54,8 +66,13 @@ public class OutboxEvent {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
+
         if (status == null) {
             status = "PENDING";
+        }
+
+        if (attempts == null) {
+            attempts = 0;
         }
     }
 }

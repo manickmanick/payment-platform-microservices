@@ -13,6 +13,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,76 +24,148 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 public class OutboxPublisher {
 
-    private final OutboxEventRepository outboxEventRepository;
+    private static final int MAX_ATTEMPTS = 10;
+
+    private final OutboxClaimService claimService;
+    private final OutboxEventStateService stateService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
     @Scheduled(fixedDelay = 1000)
     public void publishPendingEvents() {
 
-        List<OutboxEvent> events =
-                outboxEventRepository
-                        .findTop100ByStatusOrderByCreatedAtAsc("PENDING");
+        List<OutboxEvent> events = claimService.claimBatch();
+
+        if (events.isEmpty()) {
+            return;
+        }
+
+        log.info("Claimed {} outbox events", events.size());
 
         for (OutboxEvent event : events) {
 
             try {
-                // 1. Read the JSON payload stored in the Outbox.
                 JsonNode payload =
                         objectMapper.readTree(event.getPayload());
 
-                // 2. Convert JSON into the generated Avro record.
                 OrderCreatedEvent avroEvent = toAvroEvent(payload);
 
-                // 3. Send the Avro record and wait for Kafka's acknowledgement.
+                // Wait for Kafka acknowledgement.
                 kafkaTemplate.send(
                         event.getTopic(),
                         event.getMessageKey(),
                         avroEvent
                 ).get();
 
-                // 4. Mark the Outbox event as published only after success.
-                event.setStatus("PUBLISHED");
-                event.setPublishedAt(LocalDateTime.now());
-
-                outboxEventRepository.save(event);
+                // Update MySQL only after Kafka acknowledges.
+                stateService.markPublished(event.getId());
 
                 log.info(
-                        "Outbox event published: eventId={}, topic={}",
+                        "Outbox event published: eventId={}, topic={}, attempts={}",
                         event.getEventId(),
-                        event.getTopic()
+                        event.getTopic(),
+                        event.getAttempts()
                 );
 
             } catch (InterruptedException exception) {
+
+                handleFailure(event, exception);
+
                 Thread.currentThread().interrupt();
 
-                log.error(
-                        "Outbox publishing interrupted for eventId={}",
-                        event.getEventId(),
-                        exception
+                log.warn(
+                        "Outbox publishing interrupted. Stopping current batch."
                 );
 
                 return;
 
             } catch (ExecutionException | RuntimeException exception) {
+
+                handleFailure(event, exception);
+
+            } catch (Exception exception) {
+
+                // Invalid JSON or event conversion errors also need
+                // to be visible and eventually moved to FAILED.
+                handleFailure(event, exception);
+            }
+        }
+    }
+
+    private void handleFailure(
+            OutboxEvent event,
+            Exception exception
+    ) {
+
+        String error = exception.getMessage();
+
+        log.error(
+                "Outbox publishing failed: eventId={}, attempt={}",
+                event.getEventId(),
+                event.getAttempts(),
+                exception
+        );
+
+        try {
+
+            if (event.getAttempts() >= MAX_ATTEMPTS) {
+
+                stateService.markFailed(
+                        event.getId(),
+                        error
+                );
+
                 log.error(
-                        "Failed to publish outbox eventId={}; it remains eligible for retry",
+                        "Outbox event moved to FAILED: eventId={}",
+                        event.getEventId()
+                );
+
+            } else {
+
+                stateService.scheduleRetry(
+                        event.getId(),
+                        error
+                );
+
+                log.info(
+                        "Outbox retry scheduled: eventId={}, attempt={}",
                         event.getEventId(),
-                        exception
+                        event.getAttempts()
                 );
             }
+
+        } catch (Exception stateException) {
+
+            // Leave it PROCESSING. The stale-claim mechanism
+            // will make it eligible again after the lease expires.
+            log.error(
+                    "Could not update outbox state: eventId={}",
+                    event.getEventId(),
+                    stateException
+            );
         }
     }
 
     private OrderCreatedEvent toAvroEvent(JsonNode payload) {
 
-        BigDecimal amount = payload.get("amount").decimalValue();
+        if (payload == null
+                || payload.get("eventId") == null
+                || payload.get("orderId") == null
+                || payload.get("userId") == null
+                || payload.get("amount") == null
+                || payload.get("currency") == null) {
 
-        // Avro decimal: encode the unscaled integer as a signed byte sequence.
+            throw new IllegalArgumentException(
+                    "Invalid OrderCreatedEvent payload"
+            );
+        }
+
+        BigDecimal amount = payload.get("amount")
+                .decimalValue()
+                .setScale(2, RoundingMode.UNNECESSARY);
+
         ByteBuffer amountBytes = ByteBuffer.wrap(
-                amount.movePointRight(2)
-                        .toBigIntegerExact()
-                        .toByteArray()
+                amount.unscaledValue().toByteArray()
         );
 
         return OrderCreatedEvent.newBuilder()
@@ -100,6 +173,7 @@ public class OutboxPublisher {
                 .setOrderId(payload.get("orderId").longValue())
                 .setUserId(payload.get("userId").longValue())
                 .setAmount(amountBytes)
+                .setCurrency(payload.get("currency").asText())
                 .build();
     }
 }
