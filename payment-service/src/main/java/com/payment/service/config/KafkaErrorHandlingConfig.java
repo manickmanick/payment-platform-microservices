@@ -1,8 +1,8 @@
-
 package com.payment.service.config;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -15,6 +15,7 @@ public class KafkaErrorHandlingConfig {
 
     @Bean
     public DefaultErrorHandler kafkaErrorHandler(
+            @Qualifier("dltKafkaTemplate")
             KafkaTemplate<Object, Object> kafkaTemplate) {
 
         DeadLetterPublishingRecoverer recoverer =

@@ -1,0 +1,32 @@
+{
+  "type": "record",
+  "name": "PaymentSucceededEvent",
+  "namespace": "com.payment.service.avro",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": "string"
+    },
+    {
+      "name": "orderId",
+      "type": "long"
+    },
+    {
+      "name": "paymentId",
+      "type": "long"
+    },
+    {
+      "name": "userId",
+      "type": "long"
+    },
+    {
+      "name": "amount",
+      "type": "bytes"
+    },
+    {
+      "name": "currency",
+      "type": "string",
+      "default": "INR"
+    }
+  ]
+}

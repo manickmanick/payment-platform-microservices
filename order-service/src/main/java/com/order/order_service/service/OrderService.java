@@ -19,6 +19,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Value;
 
 @Service
@@ -32,7 +33,12 @@ public class OrderService {
     private final String deliveryInternalKey;
 
     public OrderService(OrderRepository orderRepository, OutboxEventRepository outboxEventRepository, ObjectMapper objectMapper, OrderItemRepository orderItems, DeliveryClient deliveryClient, @Value("${delivery-service.internal-key:local-internal-key-change-me}") String deliveryInternalKey) {
-        this.orderRepository=orderRepository; this.outboxEventRepository=outboxEventRepository; this.objectMapper=objectMapper; this.orderItems=orderItems; this.deliveryClient=deliveryClient; this.deliveryInternalKey=deliveryInternalKey;
+        this.orderRepository = orderRepository;
+        this.outboxEventRepository = outboxEventRepository;
+        this.objectMapper = objectMapper;
+        this.orderItems = orderItems;
+        this.deliveryClient = deliveryClient;
+        this.deliveryInternalKey = deliveryInternalKey;
     }
 
     @Transactional
@@ -89,16 +95,23 @@ public class OrderService {
 
         Order order = findOrder(orderId);
         boolean alreadyConfirmed = order.getStatus() == OrderStatus.CONFIRMED;
-        if(!alreadyConfirmed&&order.getStatus()!=OrderStatus.PENDING)throw new IllegalStateException("Only pending orders can be confirmed");
+        if (!alreadyConfirmed && order.getStatus() != OrderStatus.PENDING)
+            throw new IllegalStateException("Only pending orders can be confirmed");
         order.setStatus(OrderStatus.CONFIRMED);
 
         Order updatedOrder = orderRepository.save(order);
-        var lines=orderItems.findByOrderIdOrderById(orderId).stream().map(i->new DeliveryRequest.Item(i.getItemName(),i.getQuantity())).toList();
-        if(!alreadyConfirmed&&order.getDeliveryAddress()!=null&&!order.getDeliveryAddress().isBlank()) deliveryClient.create(deliveryInternalKey,new DeliveryRequest(order.getId(),order.getUserId(),order.getCustomerEmail(),order.getCustomerPhone(),order.isSmsOptIn(),order.getDeliveryAddress(),order.getAmount(),order.getDeliveryLatitude(),order.getDeliveryLongitude(),lines));
+        var lines = orderItems.findByOrderIdOrderById(orderId).stream().map(i -> new DeliveryRequest.Item(i.getItemName(), i.getQuantity())).toList();
+//        if (!alreadyConfirmed && order.getDeliveryAddress() != null && !order.getDeliveryAddress().isBlank())
+//            deliveryClient.create(deliveryInternalKey, new DeliveryRequest(order.getId(), order.getUserId(), order.getCustomerEmail(), order.getCustomerPhone(), order.isSmsOptIn(), order.getDeliveryAddress(), order.getAmount(), order.getDeliveryLatitude(), order.getDeliveryLongitude(), lines));
         return toResponse(updatedOrder);
     }
 
-    @Transactional public void applyDeliveryStatus(Long orderId,OrderStatus status){Order order=findOrder(orderId);order.setStatus(status);orderRepository.save(order);}
+    @Transactional
+    public void applyDeliveryStatus(Long orderId, OrderStatus status) {
+        Order order = findOrder(orderId);
+        order.setStatus(status);
+        orderRepository.save(order);
+    }
 
     @Transactional
     public OrderResponse cancelOrder(Long orderId) {
@@ -118,8 +131,16 @@ public class OrderService {
                         )
                 );
     }
-    @org.springframework.transaction.annotation.Transactional(readOnly=true) public Order getOrder(Long orderId){return findOrder(orderId);}
-    @org.springframework.transaction.annotation.Transactional(readOnly=true) public boolean hasDeliveredOrder(Long userId,Long restaurantId){return orderItems.hasDeliveredOrder(userId,restaurantId);}
+
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public Order getOrder(Long orderId) {
+        return findOrder(orderId);
+    }
+
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public boolean hasDeliveredOrder(Long userId, Long restaurantId) {
+        return orderItems.hasDeliveredOrder(userId, restaurantId);
+    }
 
     private OrderResponse toResponse(Order order) {
         return new OrderResponse(

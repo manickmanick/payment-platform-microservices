@@ -1,3 +1,4 @@
+
 import api from "./axios";
 
 const getCheckoutIdempotencyKey = () => {
@@ -5,6 +6,7 @@ const getCheckoutIdempotencyKey = () => {
 
   if (!key) {
     key = crypto.randomUUID();
+
     sessionStorage.setItem("checkoutIdempotencyKey", key);
   }
 
@@ -16,7 +18,7 @@ export const placeOrder = (
   couponCode = "",
   coordinates,
   customerPhone,
-  smsOptIn,
+  smsOptIn
 ) => {
   const idempotencyKey = getCheckoutIdempotencyKey();
 
@@ -34,15 +36,24 @@ export const placeOrder = (
       headers: {
         "Idempotency-Key": idempotencyKey,
       },
-    },
+    }
   );
 };
 
-export const getMyOrders = () => api.get("/orders?sort=createdAt,desc");
+export const getMyOrders = () =>
+  api.get("/orders?sort=createdAt,desc");
 
-export const getOrderById = (id) => api.get(`/orders/${id}`);
+export const getOrderById = (id) =>
+  api.get(`/orders/${id}`);
 
 export const getDriverLocation = (id) =>
   api.get(`/orders/${id}/driver-location`);
-export const confirmOrder = (id) => api.put(`/orders/${id}/confirm`);
-export const cancelOrder = (id) => api.post(`/orders/${id}/cancel`);
+
+export const confirmOrder = (id) =>
+  api.put(`/orders/${id}/confirm`);
+
+export const cancelOrder = (id) =>
+  api.post(`/orders/${id}/cancel`);
+
+export const resumeOrderPayment = (orderId) =>
+  api.post(`/orders/${orderId}/payment-session`);

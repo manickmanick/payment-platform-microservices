@@ -176,4 +176,68 @@ public class CheckoutService {
             } catch (Exception ignored) {
             }
     }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> resumePayment(
+            long orderId,
+            long userId,
+            String token
+    ) {
+
+        // 1. Find the existing order
+        Order order = orders.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Order not found"
+                ));
+
+        // 2. Verify order ownership
+        if (!Objects.equals(order.getUserId(), userId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You are not allowed to access this order"
+            );
+        }
+
+        // 3. Only pending orders can resume payment
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Payment cannot be resumed for this order. Current order status: "
+                            + order.getStatus()
+            );
+        }
+
+        // 4. Retrieve the existing PaymentIntent from Payment Service
+        try {
+            Map<String, Object> paymentResponse =
+                    payments.resumePayment(
+                            orderId,
+                            "Bearer " + token
+                    );
+
+            // 5. Payment was already successful
+            if ("ALREADY_PAID".equals(paymentResponse.get("status"))) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "This order has already been paid"
+                );
+            }
+
+            // 6. Return existing payment session to frontend
+            Map<String, Object> response = new LinkedHashMap<>();
+
+            response.put("orderId", order.getId());
+            response.put("paymentId", paymentResponse.get("paymentId"));
+            response.put("amount", order.getAmount());
+            response.put("currency", paymentResponse.get("currency"));
+            response.put("status", paymentResponse.get("status"));
+            response.put("clientSecret", paymentResponse.get("clientSecret"));
+
+            return response;
+
+        } catch (ResponseStatusException exception) {
+            throw exception;
+        }
+    }
 }

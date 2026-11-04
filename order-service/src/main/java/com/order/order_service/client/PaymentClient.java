@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.PathVariable;
 import java.util.Map;
-
+import org.springframework.web.bind.annotation.GetMapping;
 
 @FeignClient(
         name = "payment-service",
@@ -22,4 +22,10 @@ public interface PaymentClient {
 
     @PostMapping("/payments/orders/{orderId}/refund")
     Map<String,Object> refundOrder(@PathVariable("orderId")Long orderId,@RequestHeader("Authorization")String authorization,@RequestHeader("X-Internal-Key")String internalKey);
+
+    @GetMapping("/payments/orders/{orderId}/resume")
+    Map<String, Object> resumePayment(
+            @PathVariable("orderId") Long orderId,
+            @RequestHeader("Authorization") String authorization
+    );
 }
