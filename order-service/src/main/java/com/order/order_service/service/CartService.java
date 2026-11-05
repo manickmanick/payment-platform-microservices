@@ -26,33 +26,135 @@ public class CartService {
 
     public Map<String, Object> get(long uid) {
         List<Map<String, Object>> rows = repo.findByUserIdOrderById(uid).stream().map(i -> Map.<String, Object>of("id", i.getId(), "menuItemId", i.getMenuItemId(), "itemName", i.getItemName(), "menuItemName", i.getItemName(), "unitPrice", i.getUnitPrice(), "quantity", i.getQuantity(), "subtotal", i.subtotal(), "restaurantId", i.getRestaurantId())).toList();
+        System.out.println(rows);
         BigDecimal total = rows.stream().map(x -> (BigDecimal) x.get("subtotal")).reduce(BigDecimal.ZERO, BigDecimal::add);
         return Map.of("items", rows, "total", total);
     }
 
     @Transactional
-    public Map<String, Object> add(long uid, long menu, int q, String token) {
+    public Map<String, Object> add(
+            long uid,
+            long menu,
+            int q,
+            String token
+    ) {
+
+        // Step 2: Retrieve menu item from Catalog Service.
         Map<String, Object> item;
+
         try {
-            item = catalog.getMenuItem(menu, "Bearer " + token);
+            item = catalog.getMenuItem(
+                    menu,
+                    "Bearer " + token
+            );
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Menu item is unavailable", e);
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Menu item is unavailable",
+                    e
+            );
         }
-        if (Boolean.FALSE.equals(item.get("available")))
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Menu item is not available");
-        long restaurant = ((Number) item.get("restaurantId")).longValue();
-        var cart = repo.findByUserIdOrderById(uid);
-        if (cart.stream().anyMatch(i -> !i.getRestaurantId().equals(restaurant)))
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "A cart can contain items from one restaurant only");
-        var old = repo.findByUserIdAndMenuItemId(uid, menu);
-        if (old.isPresent()) {
-            if (old.get().getQuantity() + q > 99)
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cart quantity cannot exceed 99");
-            old.get().setQuantity(old.get().getQuantity() + q);
-        } else
-            repo.save(new CartItem(uid, menu, restaurant, Objects.toString(item.get("name")), new BigDecimal(item.get("price").toString()), q));
+
+        // Step 3: Check menu item availability.
+        if (Boolean.FALSE.equals(item.get("available"))) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Menu item is not available"
+            );
+        }
+
+        // Step 4: Extract restaurant ID.
+        long restaurantId =
+                ((Number) item.get("restaurantId")).longValue();
+
+        // Step 5: Retrieve all cart items belonging to this user.
+        List<CartItem> cartItems =
+                repo.findByUserIdOrderById(uid);
+
+        // Step 6: A cart can contain items from one restaurant only.
+        boolean differentRestaurantExists = cartItems.stream()
+                .anyMatch(cartItem ->
+                        !Objects.equals(
+                                cartItem.getRestaurantId(),
+                                restaurantId
+                        )
+                );
+
+        if (differentRestaurantExists) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "A cart can contain items from one restaurant only"
+            );
+        }
+
+        // Step 7: Search the already retrieved list for this menu item.
+        Optional<CartItem> existingItem = cartItems.stream()
+                .filter(cartItem ->
+                        cartItem.getMenuItemId() == menu
+                )
+                .findFirst();
+
+        if (existingItem.isPresent()) {
+
+            // Step 8A: Existing item -> increase quantity.
+            CartItem cartItem = existingItem.get();
+
+            int newQuantity = cartItem.getQuantity() + q;
+
+            if (newQuantity > 99) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Cart quantity cannot exceed 99"
+                );
+            }
+
+            cartItem.setQuantity(newQuantity);
+
+            repo.save(cartItem);
+
+        } else {
+
+            // Step 8B: New item -> create a new CartItem.
+            CartItem newCartItem = new CartItem(
+                    uid,
+                    menu,
+                    restaurantId,
+                    Objects.toString(item.get("name")),
+                    new BigDecimal(item.get("price").toString()),
+                    q
+            );
+
+            repo.save(newCartItem);
+        }
+
+        // Step 9: Return updated cart.
         return get(uid);
     }
+
+
+//    @Transactional
+//    public Map<String, Object> add(long uid, long menu, int q, String token) {
+//        Map<String, Object> item;
+//        try {
+//            item = catalog.getMenuItem(menu, "Bearer " + token);
+//        } catch (Exception e) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Menu item is unavailable", e);
+//        }
+//        if (Boolean.FALSE.equals(item.get("available")))
+//            throw new ResponseStatusException(HttpStatus.CONFLICT, "Menu item is not available");
+//        long restaurant = ((Number) item.get("restaurantId")).longValue();
+//        var cart = repo.findByUserIdOrderById(uid);
+//        if (cart.stream().anyMatch(i -> !i.getRestaurantId().equals(restaurant)))
+//            throw new ResponseStatusException(HttpStatus.CONFLICT, "A cart can contain items from one restaurant only");
+//        var old = repo.findByUserIdAndMenuItemId(uid, menu);
+//        if (old.isPresent()) {
+//            if (old.get().getQuantity() + q > 99)
+//                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cart quantity cannot exceed 99");
+//            old.get().setQuantity(old.get().getQuantity() + q);
+//        } else
+//            repo.save(new CartItem(uid, menu, restaurant, Objects.toString(item.get("name")), new BigDecimal(item.get("price").toString()), q));
+//        return get(uid);
+//    }
 
     @Transactional
     public Map<String, Object> update(long uid, long id, int q) {

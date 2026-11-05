@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -36,17 +35,12 @@ const cardOptions = {
 const POLLING_INTERVAL = 1000;
 const MAX_POLLING_ATTEMPTS = 30;
 
-const delay = (ms) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Wait until Payment Service receives the Stripe webhook
 // and updates the payment status in its database.
 const waitForPaymentSuccess = async (paymentIntentId) => {
-  for (
-    let attempt = 1;
-    attempt <= MAX_POLLING_ATTEMPTS;
-    attempt++
-  ) {
+  for (let attempt = 1; attempt <= MAX_POLLING_ATTEMPTS; attempt++) {
     const { data } = await verifyPayment(paymentIntentId);
 
     if (data.status === "SUCCESS") {
@@ -63,7 +57,7 @@ const waitForPaymentSuccess = async (paymentIntentId) => {
   }
 
   throw new Error(
-    "Payment is still processing. Please check your order status shortly."
+    "Payment is still processing. Please check your order status shortly.",
   );
 };
 
@@ -90,19 +84,13 @@ const waitForPaymentSuccess = async (paymentIntentId) => {
 //     }
 //   }
 
-
-
 //   throw new Error(
 //     "Payment succeeded, but order confirmation is still processing. Please check your orders shortly."
 //   );
 // };
 
 const waitForOrderConfirmation = async (orderId) => {
-  for (
-    let attempt = 1;
-    attempt <= MAX_POLLING_ATTEMPTS;
-    attempt++
-  ) {
+  for (let attempt = 1; attempt <= MAX_POLLING_ATTEMPTS; attempt++) {
     const { data } = await getOrderById(orderId);
 
     if (data.status === "CONFIRMED") {
@@ -119,7 +107,7 @@ const waitForOrderConfirmation = async (orderId) => {
   }
 
   throw new Error(
-    "Payment succeeded, but order confirmation is still processing. Please check your orders shortly."
+    "Payment succeeded, but order confirmation is still processing. Please check your orders shortly.",
   );
 };
 
@@ -159,7 +147,7 @@ function PaymentForm({ amount, orderId, clientSecret }) {
 
       if (result.paymentIntent.status !== "succeeded") {
         throw new Error(
-          `Payment is not completed. Current status: ${result.paymentIntent.status}`
+          `Payment is not completed. Current status: ${result.paymentIntent.status}`,
         );
       }
 
@@ -194,7 +182,7 @@ function PaymentForm({ amount, orderId, clientSecret }) {
       setError(
         requestError.response?.data?.message ||
           requestError.message ||
-          "Payment could not be completed."
+          "Payment could not be completed.",
       );
     } finally {
       setIsSubmitting(false);
@@ -213,16 +201,10 @@ function PaymentForm({ amount, orderId, clientSecret }) {
       </p>
 
       {error && (
-        <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-          {error}
-        </p>
+        <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>
       )}
 
-      {paymentStage && (
-        <p className="text-sm text-blue-600">
-          {paymentStage}
-        </p>
-      )}
+      {paymentStage && <p className="text-sm text-blue-600">{paymentStage}</p>}
 
       <Button
         type="submit"
@@ -255,14 +237,10 @@ export default function PaymentPage() {
   return (
     <MainLayout>
       <div className="mx-auto max-w-md p-6">
-        <h1 className="mb-6 text-3xl font-bold">
-          Payment
-        </h1>
+        <h1 className="mb-6 text-3xl font-bold">Payment</h1>
 
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-md">
-          <h2 className="mb-6 text-xl font-bold">
-            Cart subtotal: ₹{amount}
-          </h2>
+          <h2 className="mb-6 text-xl font-bold">Cart subtotal: ₹{amount}</h2>
 
           {stripePromise ? (
             <Elements stripe={stripePromise}>
@@ -274,7 +252,8 @@ export default function PaymentPage() {
             </Elements>
           ) : (
             <p className="rounded-lg bg-red-50 p-3 text-red-600">
-              Set VITE_STRIPE_PUBLISHABLE_KEY to your Stripe test publishable key.
+              Set VITE_STRIPE_PUBLISHABLE_KEY to your Stripe test publishable
+              key.
             </p>
           )}
         </div>
