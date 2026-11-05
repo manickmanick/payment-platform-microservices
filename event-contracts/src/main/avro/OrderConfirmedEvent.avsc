@@ -1,0 +1,93 @@
+{
+  "type": "record",
+  "name": "OrderConfirmedEvent",
+  "namespace": "com.order.order_service.avro",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": "string"
+    },
+    {
+      "name": "orderId",
+      "type": "long"
+    },
+    {
+      "name": "userId",
+      "type": "long"
+    },
+    {
+      "name": "customerEmail",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "customerPhone",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "smsOptIn",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "deliveryAddress",
+      "type": "string"
+    },
+    {
+      "name": "amount",
+      "type": {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 12,
+        "scale": 2
+      }
+    },
+    {
+      "name": "deliveryLatitude",
+      "type": [
+        "null",
+        {
+          "type": "bytes",
+          "logicalType": "decimal",
+          "precision": 10,
+          "scale": 7
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "deliveryLongitude",
+      "type": [
+        "null",
+        {
+          "type": "bytes",
+          "logicalType": "decimal",
+          "precision": 10,
+          "scale": 7
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "items",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "OrderItem",
+          "fields": [
+            {
+              "name": "itemName",
+              "type": "string"
+            },
+            {
+              "name": "quantity",
+              "type": "int"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

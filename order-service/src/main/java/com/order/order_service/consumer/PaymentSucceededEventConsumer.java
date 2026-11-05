@@ -29,7 +29,7 @@ public class PaymentSucceededEventConsumer {
         orderService.confirmOrder(event.getOrderId());
 
         log.info(
-                "Order confirmed successfully. orderId={}",
+                "Order confirmation processed. orderId={}",
                 event.getOrderId()
         );
     }

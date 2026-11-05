@@ -48,7 +48,7 @@ export const getOrderById = (id) =>
 
 export const getDriverLocation = (id) =>
   api.get(`/orders/${id}/driver-location`);
-
+  
 export const confirmOrder = (id) =>
   api.put(`/orders/${id}/confirm`);
 

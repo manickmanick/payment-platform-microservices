@@ -3,7 +3,9 @@ package com.order.order_service.service;
 
 import com.order.order_service.entity.OutboxEvent;
 import com.order.order_service.repository.OutboxEventRepository;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +16,11 @@ import java.time.LocalDateTime;
 public class OutboxEventStateService {
 
     private final OutboxEventRepository repository;
+
+
+    // --------------------------------------------------
+    // 1. Mark event as PUBLISHED
+    // --------------------------------------------------
 
     @Transactional
     public void markPublished(Long eventId) {
@@ -27,6 +34,11 @@ public class OutboxEventStateService {
         event.setLastError(null);
     }
 
+
+    // --------------------------------------------------
+    // 2. Schedule retry
+    // --------------------------------------------------
+
     @Transactional
     public void scheduleRetry(Long eventId, String error) {
 
@@ -34,24 +46,43 @@ public class OutboxEventStateService {
 
         event.setStatus("PENDING");
         event.setClaimedAt(null);
-        event.setNextAttemptAt(LocalDateTime.now().plusSeconds(
-                calculateBackoffSeconds(event.getAttempts())
-        ));
+
+        event.setNextAttemptAt(
+                LocalDateTime.now().plusSeconds(
+                        calculateBackoffSeconds(event.getAttempts())
+                )
+        );
+
         event.setLastError(truncate(error));
     }
 
+
+    // --------------------------------------------------
+    // 3. Mark event as FAILED after DLT publish success
+    // --------------------------------------------------
+
     @Transactional
-    public void markFailed(Long eventId, String error) {
+    public void markDltPublished(Long eventId, String error) {
 
         OutboxEvent event = getEvent(eventId);
 
         event.setStatus("FAILED");
+
+        event.setDltPublishedAt(LocalDateTime.now());
+
         event.setClaimedAt(null);
         event.setNextAttemptAt(null);
+
         event.setLastError(truncate(error));
     }
 
+
+    // --------------------------------------------------
+    // 4. Get event
+    // --------------------------------------------------
+
     private OutboxEvent getEvent(Long eventId) {
+
         return repository.findById(eventId)
                 .orElseThrow(() ->
                         new IllegalStateException(
@@ -60,13 +91,29 @@ public class OutboxEventStateService {
                 );
     }
 
+
+    // --------------------------------------------------
+    // 5. Exponential backoff
+    // --------------------------------------------------
+
     private long calculateBackoffSeconds(int attempts) {
 
-        // 2, 4, 8, 16, 32 ... maximum 300 seconds.
-        int exponent = Math.min(Math.max(attempts, 1), 8);
+        // 2, 4, 8, 16, 32 ... maximum 256 seconds.
+        int exponent = Math.min(
+                Math.max(attempts, 1),
+                8
+        );
 
-        return Math.min(2L * (1L << (exponent - 1)), 300L);
+        return Math.min(
+                2L * (1L << (exponent - 1)),
+                300L
+        );
     }
+
+
+    // --------------------------------------------------
+    // 6. Truncate error
+    // --------------------------------------------------
 
     private String truncate(String error) {
 

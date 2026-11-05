@@ -61,6 +61,9 @@ public class OutboxEvent {
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
 
+    @Column(name = "dlt_published_at")
+    private LocalDateTime dltPublishedAt;
+
     @PrePersist
     void onCreate() {
         if (createdAt == null) {
