@@ -15,12 +15,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/catalog/menu-items")
-public class CatalogController {
-
+public class MenuItemController {
 
     private final CatalogService menuItemService;
 
-    public CatalogController(CatalogService menuItemService) {
+    public MenuItemController(CatalogService menuItemService) {
         this.menuItemService = menuItemService;
     }
 

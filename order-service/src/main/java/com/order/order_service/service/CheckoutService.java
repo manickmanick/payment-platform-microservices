@@ -3,18 +3,23 @@ package com.order.order_service.service;
 import com.order.order_service.client.CatalogClient;
 import com.order.order_service.client.PaymentClient;
 import com.order.order_service.dto.*;
+import com.order.order_service.dto.menu.MenuItemBulkRequest;
+import com.order.order_service.dto.menu.MenuItemResponse;
 import com.order.order_service.entity.*;
 import com.order.order_service.repository.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import feign.FeignException;
+
 
 @Service
 public class CheckoutService {
@@ -49,18 +54,85 @@ public class CheckoutService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A valid E.164 phone number is required for SMS updates");
         var cart = carts.findByUserIdOrderById(uid);
         if (cart.isEmpty()) throw new ResponseStatusException(HttpStatus.CONFLICT, "Your cart is empty");
+
         try {
+
+            // collect all menu item ids
+            List<Long> menuItemIds = cart.stream()
+                    .map(CartItem::getMenuItemId)
+                    .distinct()
+                    .toList();
+//            for (CartItem c : cart) {
+                // old approach below:
+
+//                Map<String, Object> current = catalog.getMenuItem(c.getMenuItemId(), "Bearer " + token);
+//                if (!Boolean.TRUE.equals(current.get("available")))
+//                    throw new ResponseStatusException(HttpStatus.CONFLICT, "A cart item is no longer available");
+//                c.refresh(((Number) current.get("restaurantId")).longValue(), Objects.toString(current.get("name")), new BigDecimal(current.get("price").toString()));
+
+//            }
+
+
+            // 2. Call Catalog Service only once
+            List<MenuItemResponse> menuItems =
+                    catalog.getMenuItems(
+                            new MenuItemBulkRequest(menuItemIds),
+                            "Bearer " + token
+                    );
+
+            // 3. Create a lookup map
+            Map<Long, MenuItemResponse> menuItemMap = menuItems.stream()
+                    .collect(Collectors.toMap(
+                            MenuItemResponse::id,
+                            item -> item
+                    ));
+
+            // 4. Refresh cart items
             for (CartItem c : cart) {
-                Map<String, Object> current = catalog.getMenuItem(c.getMenuItemId(), "Bearer " + token);
-                if (!Boolean.TRUE.equals(current.get("available")))
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "A cart item is no longer available");
-                c.refresh(((Number) current.get("restaurantId")).longValue(), Objects.toString(current.get("name")), new BigDecimal(current.get("price").toString()));
+
+                MenuItemResponse current =
+                        menuItemMap.get(c.getMenuItemId());
+
+                if (current == null) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_GATEWAY,
+                            "Catalog response is missing a menu item"
+                    );
+                }
+
+//                c.refresh(
+//                        current.restaurantId(),
+//                        current.name(),
+//                        current.price()
+//                );
+
+                c.refresh(((Number) current.restaurantId()).longValue(), Objects.toString(current.name()), new BigDecimal(current.price().toString()));
             }
+
+
         } catch (ResponseStatusException e) {
             throw e;
-        } catch (Exception e) {
+        }catch (FeignException e) {
+
+            HttpStatus status = HttpStatus.resolve(e.status());
+
+            if (status != null) {
+                throw new ResponseStatusException(
+                        status,
+                        "Catalog Service: " + e.getMessage()
+                );
+            }
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Could not communicate with Catalog Service",
+                    e
+            );
+        }
+        catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Could not validate cart items", e);
         }
+
         if (cart.stream().map(CartItem::getRestaurantId).distinct().count() > 1)
             throw new ResponseStatusException(HttpStatus.CONFLICT, "All cart items must come from one restaurant");
         BigDecimal subtotal = cart.stream().map(CartItem::subtotal).reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);

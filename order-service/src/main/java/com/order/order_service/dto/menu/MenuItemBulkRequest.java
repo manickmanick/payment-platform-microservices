@@ -1,4 +1,9 @@
 package com.order.order_service.dto.menu;
 
-public record MenuItemBulkRequest() {
+import java.util.List;
+
+public record MenuItemBulkRequest(
+
+        List<Long> menuItemIds
+) {
 }

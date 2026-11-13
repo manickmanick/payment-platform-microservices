@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
 
+// stripe listen --forward-to localhost:8081/webhooks/stripe --events payment_intent.succeeded,payment_intent.payment_failed,charge.refunded
+
 @Slf4j
 @RestController
 @RequestMapping("/webhooks/stripe")
@@ -57,6 +59,7 @@ public class StripeWebhookController {
         final Event event;
 
         try {
+            log.info("Stripe webhook signature verification started");
             event = Webhook.constructEvent(
                     payload,
                     signatureHeader,

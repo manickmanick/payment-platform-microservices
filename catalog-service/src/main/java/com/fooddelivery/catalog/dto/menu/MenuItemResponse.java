@@ -1,4 +1,13 @@
 package com.fooddelivery.catalog.dto.menu;
 
-public record MenuItemResponse() {
+import java.math.BigDecimal;
+
+public record MenuItemResponse(
+
+        Long id,
+        Long restaurantId,
+        String name,
+        BigDecimal price,
+        Boolean available
+) {
 }

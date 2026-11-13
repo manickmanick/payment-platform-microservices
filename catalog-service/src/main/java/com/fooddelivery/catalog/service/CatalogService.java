@@ -4,6 +4,8 @@ package com.fooddelivery.catalog.service;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.fooddelivery.catalog.client.OrderEligibilityClient;
+import com.fooddelivery.catalog.dto.menu.MenuItemBulkRequest;
+import com.fooddelivery.catalog.dto.menu.MenuItemResponse;
 import com.fooddelivery.catalog.entity.*;
 import com.fooddelivery.catalog.repository.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -694,5 +696,56 @@ public class CatalogService {
         result.put("averageRating", item.getAverageRating());
         result.put("reviewCount", item.getReviewCount());
         return result;
+    }
+
+    @Transactional(readOnly = true)
+    public List<MenuItemResponse> getMenuItems(MenuItemBulkRequest request){
+
+        // remove duplicate IDS
+       List<Long> menuItemIds = new LinkedHashSet<>(request.menuItemIds()).stream().toList();
+
+       //fetch all matching menuItems
+        List<MenuItem> menuItems = items.findAllById(menuItemIds);
+
+        // check whether all requested items exist
+        if(menuItemIds.size() != menuItems.size()){
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "One or more menu items were not found"
+            );
+        }
+
+        // convert a fetched entity to map using their IDs
+        Map<Long,MenuItem> menuItemMap = new HashMap<>();
+
+        for(MenuItem item:menuItems){
+            menuItemMap.put(item.getId(),item);
+        }
+
+        // validate availability and build response
+
+        return menuItemIds.stream()
+                .map(id -> {
+
+                    MenuItem item = menuItemMap.get(id);
+
+                    if(!Boolean.TRUE.equals(item.getAvailable())){
+                        throw new ResponseStatusException(
+                                HttpStatus.CONFLICT,
+                                "Menu item is no longer available: " + id
+                        );
+                    }
+
+                    return new MenuItemResponse(
+                            item.getId(),
+                            item.getRestaurant().getId(),
+                            item.getName(),
+                            item.getPrice(),
+                            item.getAvailable()
+                    );
+                }).toList();
+
+
+
     }
 }
