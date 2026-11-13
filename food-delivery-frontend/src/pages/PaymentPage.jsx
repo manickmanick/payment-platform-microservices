@@ -142,6 +142,8 @@ function PaymentForm({ amount, orderId, clientSecret }) {
       });
 
       if (result.error) {
+        console.log("error came");
+        
         throw new Error(result.error.message);
       }
 
