@@ -55,6 +55,9 @@ public class OutboxEvent {
     @Column(name = "claimed_at")
     private LocalDateTime claimedAt;
 
+    @Column(name = "correlation_id", length = 100)
+    private String correlationId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

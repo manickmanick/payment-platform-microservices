@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import org.slf4j.MDC;
 
 @Service
 @RequiredArgsConstructor
@@ -59,6 +60,8 @@ public class PaymentService {
     private PaymentResponse createNewPayment(PaymentRequest request) {
 
         try {
+
+            String correlationId = MDC.get("correlationId");
 
             long amountInPaise = request.amount()
                     .movePointRight(2)
@@ -103,6 +106,7 @@ public class PaymentService {
                     .status(PaymentStatus.PENDING)
                     .idempotencyKey(request.idempotencyKey())
                     .stripePaymentIntentId(intent.getId())
+                    .correlationId(correlationId)
                     .createdAt(LocalDateTime.now())
                     .build();
 
@@ -596,6 +600,7 @@ public class PaymentService {
             outboxEvent.setMessageKey(payment.getOrderId().toString());
             outboxEvent.setPayload(payloadJson);
             outboxEvent.setStatus("PENDING");
+            outboxEvent.setCorrelationId(payment.getCorrelationId());
             outboxEvent.setAttempts(0);
 
 

@@ -44,6 +44,9 @@ public class Payment {
     @Column(name = "stripe_payment_intent_id", unique = true)
     private String stripePaymentIntentId;
 
+    @Column(name = "correlation_id", length = 100)
+    private String correlationId;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
