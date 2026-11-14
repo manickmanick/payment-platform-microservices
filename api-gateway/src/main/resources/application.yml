@@ -28,6 +28,7 @@ spring:
                   - Content-Type
                   - Idempotency-Key
                   - X-Internal-Key
+                  - X-Correlation-ID
                   - Accept
                   - Origin
                 allowCredentials: true
