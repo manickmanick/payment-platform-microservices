@@ -179,6 +179,8 @@ services:
   fluent-bit:
     image: fluent/fluent-bit:4.2
     container_name: fluent-bit
+    ports:
+      - "2020:2020"
     restart: unless-stopped
 
     volumes:
