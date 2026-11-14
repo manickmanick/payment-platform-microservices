@@ -185,11 +185,49 @@ services:
       - ./order-service/logs:/logs/order-service:ro
       - ./payment-service/logs:/logs/payment-service:ro
       - ./catalog-service/logs:/logs/catalog-service:ro
-
       - ./fluent-bit/fluent-bit-docker.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
+
+    depends_on:
+      - loki
 
     command:
       - /fluent-bit/bin/fluent-bit
       - -c
       - /fluent-bit/etc/fluent-bit.conf
+
+  loki:
+    image: grafana/loki:3.5.0
+    container_name: loki
+    restart: unless-stopped
+
+    command:
+      - -config.file=/etc/loki/loki-config.yaml
+
+    ports:
+      - "3100:3100"
+
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki-data:/loki
+
+  grafana:
+    image: grafana/grafana:12.0.0
+    container_name: grafana
+    restart: unless-stopped
+
+    ports:
+      - "3001:3000"
+
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+    depends_on:
+      - loki
+
+
+volumes:
+  loki-data:
+  grafana-data:
+
 
