@@ -187,6 +187,7 @@ services:
       - ./catalog-service/logs:/logs/catalog-service:ro
       - ./fluent-bit/fluent-bit-docker.conf:/fluent-bit/etc/fluent-bit.conf:ro
       - ./fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
+      - fluent-bit-storage:/var/fluent-bit/storage
 
     depends_on:
       - loki
@@ -229,5 +230,6 @@ services:
 volumes:
   loki-data:
   grafana-data:
+  fluent-bit-storage:
 
 
