@@ -174,3 +174,22 @@ services:
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:29092
       SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR: 1
+
+
+  fluent-bit:
+    image: fluent/fluent-bit:4.2
+    container_name: fluent-bit
+    restart: unless-stopped
+
+    volumes:
+      - ./order-service/logs:/logs/order-service:ro
+      - ./payment-service/logs:/logs/payment-service:ro
+      - ./catalog-service/logs:/logs/catalog-service:ro
+
+      - ./fluent-bit/fluent-bit-docker.conf:/fluent-bit/etc/fluent-bit.conf:ro
+
+    command:
+      - /fluent-bit/bin/fluent-bit
+      - -c
+      - /fluent-bit/etc/fluent-bit.conf
+

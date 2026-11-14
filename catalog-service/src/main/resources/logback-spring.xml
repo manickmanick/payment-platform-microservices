@@ -9,6 +9,10 @@
             source="spring.application.name"
             defaultValue="catalog-service"/>
 
+    <!-- Log directory -->
+    <property name="LOG_DIR" value="${user.dir}/catalog-service/logs"/>
+
+
     <!-- JSON Console Appender -->
     <appender name="JSON_CONSOLE"
               class="ch.qos.logback.core.ConsoleAppender">
@@ -49,9 +53,81 @@
 
     </appender>
 
+
+    <!-- JSON Rolling File Appender -->
+    <appender name="JSON_FILE"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+        <!-- Current active log file -->
+        <file>${LOG_DIR}/${serviceName}.json</file>
+
+        <!-- Rolling policy -->
+        <rollingPolicy
+                class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+
+            <!-- Archived log file naming pattern -->
+            <fileNamePattern>
+                ${LOG_DIR}/archive/${serviceName}.%d{yyyy-MM-dd}.%i.json.gz
+            </fileNamePattern>
+
+            <!-- Maximum size of each log file -->
+            <maxFileSize>10MB</maxFileSize>
+
+            <!-- Retain logs for 7 days -->
+            <maxHistory>7</maxHistory>
+
+            <!-- Maximum total archived log size -->
+            <totalSizeCap>500MB</totalSizeCap>
+
+        </rollingPolicy>
+
+        <!-- JSON Encoder -->
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+
+            <providers>
+
+                <timestamp/>
+
+                <logLevel/>
+
+                <loggerName/>
+
+                <threadName/>
+
+                <message/>
+
+                <mdc/>
+
+                <arguments/>
+
+                <stackTrace/>
+
+                <!-- Additional application metadata -->
+                <pattern>
+                    <pattern>
+                        {
+                        "service": "${serviceName}",
+                        "environment": "${APP_ENV:-local}"
+                        }
+                    </pattern>
+                </pattern>
+
+            </providers>
+
+        </encoder>
+
+    </appender>
+
+
     <!-- Root Logger -->
     <root level="INFO">
+
+        <!-- Print logs in IntelliJ console -->
         <appender-ref ref="JSON_CONSOLE"/>
+
+        <!-- Write logs into JSON file -->
+        <appender-ref ref="JSON_FILE"/>
+
     </root>
 
 </configuration>
