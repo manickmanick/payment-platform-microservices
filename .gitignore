@@ -1,6 +1,8 @@
+# Environment variables and secrets
 .env
 .env.*
 !.env.example
+**/.env
 
 # Maven build output
 **/target/
@@ -9,6 +11,10 @@
 .idea/
 *.iml
 
-# Environment variables and secrets
-.env
-**/.env
+# Application logs
+**/logs/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
