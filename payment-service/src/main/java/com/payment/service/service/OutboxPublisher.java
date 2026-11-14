@@ -16,6 +16,10 @@ import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.header.internals.RecordHeader;
+
+import java.nio.charset.StandardCharsets;
 
 @Component
 @Slf4j
@@ -53,11 +57,32 @@ public class OutboxPublisher {
                 PaymentSucceededEvent avroEvent =
                         toAvroEvent(event.getPayload());
 
-                kafkaTemplate.send(
-                        event.getTopic(),
-                        event.getMessageKey(),
-                        avroEvent
-                ).get();
+                ProducerRecord<String, Object> producerRecord =
+                        new ProducerRecord<>(
+                                event.getTopic(),
+                                event.getMessageKey(),
+                                avroEvent
+                        );
+
+                String correlationId = event.getCorrelationId();
+
+                if (correlationId != null && !correlationId.isBlank()) {
+
+                    producerRecord.headers().add(
+                            new RecordHeader(
+                                    "X-Correlation-ID",
+                                    correlationId.getBytes(StandardCharsets.UTF_8)
+                            )
+                    );
+                }
+
+                kafkaTemplate.send(producerRecord).get();
+
+//                kafkaTemplate.send(
+//                        event.getTopic(),
+//                        event.getMessageKey(),
+//                        avroEvent
+//                ).get();
 
                 outboxEventStateService.markPublished(event.getId());
 
