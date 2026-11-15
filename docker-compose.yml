@@ -18,16 +18,17 @@ services:
       args:
         VITE_API_BASE_URL: /api/v1
         VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY:-}
-    ports: ["3000:80"]
+    ports:
+      - "5173:80"
     depends_on: [api-gateway]
 
   user-service:
     build: ./user-service
-    env_file: .env
+    env_file: .env.docker
     environment:
       SERVER_PORT: 8085
       JWT_SECRET: ${JWT_SECRET:-please_set_a_random_32_byte_minimum_secret}
-      FRONTEND_URL: http://localhost:3000
+      FRONTEND_URL: http://localhost:5173
       USER_DB_URL: ${USER_DB_URL}
       USER_DB_USERNAME: ${USER_DB_USERNAME}
       USER_DB_PASSWORD: ${USER_DB_PASSWORD}
@@ -35,25 +36,29 @@ services:
       DRIVER_EMAILS: ${DRIVER_EMAILS:-}
       RESTAURANT_OWNER_EMAILS: ${RESTAURANT_OWNER_EMAILS:-}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      SPRING_PROFILES_ACTIVE: docker
+      APP_ENV: docker
     depends_on: [kafka]
     ports: ["8085:8085"]
 
   catalog-service:
     build: ./catalog-service
-    env_file: .env
+    env_file: .env.docker
     environment:
       CATALOG_DB_URL: ${CATALOG_DB_URL:-}
       JWT_SECRET: ${JWT_SECRET:-please_set_a_random_32_byte_minimum_secret}
       CATALOG_DB_USERNAME: ${CATALOG_DB_USERNAME:-root}
       CATALOG_DB_PASSWORD: ${CATALOG_DB_PASSWORD:-}
       CATALOG_INTERNAL_KEY: ${CATALOG_INTERNAL_KEY:-local-internal-key-change-me}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      SPRING_PROFILES_ACTIVE: docker
+      APP_ENV: docker
     ports: ["8086:8086"]
 
   delivery-service:
     build: ./delivery-service
-    env_file: .env
+    env_file: .env.docker
     environment:
       DELIVERY_DB_URL: ${DELIVERY_DB_URL:-}
       JWT_SECRET: ${JWT_SECRET:-please_set_a_random_32_byte_minimum_secret}
@@ -63,18 +68,22 @@ services:
       TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
       ORDER_SERVICE_URL: http://order-service:8082
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      SPRING_PROFILES_ACTIVE: docker
+      APP_ENV: docker
     depends_on: [order-service, kafka]
     ports: ["8087:8087"]
 
   mail-service:
     build: ./mail-service
-    env_file: .env
+    env_file: .env.docker
     environment:
       MAIL_DB_URL: ${MAIL_DB_URL:-}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       MAIL_INTERNAL_KEY: ${MAIL_INTERNAL_KEY:-local-mail-key-change-me}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      SPRING_PROFILES_ACTIVE: docker
+      APP_ENV: docker
     depends_on: [kafka]
     ports: ["8088:8088"]
 
@@ -82,7 +91,7 @@ services:
     build:
       context: .
       dockerfile: order-service/Dockerfile
-    env_file: .env
+    env_file: .env.docker
     environment:
       ORDER_DB_URL: ${ORDER_DB_URL:-}
       CATALOG_SERVICE_URL: http://catalog-service:8086
@@ -95,20 +104,25 @@ services:
       JWT_SECRET: ${JWT_SECRET:-please_set_a_random_32_byte_minimum_secret}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
+      SPRING_PROFILES_ACTIVE: docker
+      APP_ENV: docker
     depends_on: [kafka, schema-registry]
     ports: ["8082:8082"]
 
   payment-service:
     build: ./payment-service
-    env_file: .env
+    env_file: .env.docker
     environment:
       PAYMENT_DB_URL: ${PAYMENT_DB_URL:-}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
       PAYMENT_INTERNAL_KEY: ${PAYMENT_INTERNAL_KEY:-local-payment-key-change-me}
       JWT_SECRET: ${JWT_SECRET:-please_set_a_random_32_byte_minimum_secret}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      SPRING_PROFILES_ACTIVE: docker
+      APP_ENV: docker
     depends_on: [kafka, schema-registry]
     ports: ["8081:8081"]
 
@@ -120,8 +134,10 @@ services:
       ORDER_SERVICE_URL: http://order-service:8082
       PAYMENT_SERVICE_URL: http://payment-service:8081
       DELIVERY_SERVICE_URL: http://delivery-service:8087
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
-    depends_on: [user-service, catalog-service, order-service, payment-service, delivery-service, mail-service]
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      SPRING_PROFILES_ACTIVE: docker
+      APP_ENV: docker
+    depends_on: [user-service, catalog-service, order-service, payment-service]
     ports: ["8080:8080"]
 
   kafka:
@@ -157,7 +173,7 @@ services:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
     ports:
-      - "8080:8080"
+      - "8089:8080"
     depends_on:
       - kafka
       - schema-registry
@@ -181,28 +197,37 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR: 1
 
 
-  fluent-bit:
+  fluent-bit-local:
+    profiles: [ "local" ]
     image: fluent/fluent-bit:4.2
-    container_name: fluent-bit
+    container_name: fluent-bit-local
     ports:
       - "2020:2020"
     restart: unless-stopped
-
     volumes:
       - ./order-service/logs:/logs/order-service:ro
       - ./payment-service/logs:/logs/payment-service:ro
       - ./catalog-service/logs:/logs/catalog-service:ro
-      - ./fluent-bit/fluent-bit-docker.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./fluent-bit/fluent-bit-local.conf:/fluent-bit/etc/fluent-bit.conf:ro
       - ./fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
       - fluent-bit-storage:/var/fluent-bit/storage
-
     depends_on:
       - loki
 
-    command:
-      - /fluent-bit/bin/fluent-bit
-      - -c
-      - /fluent-bit/etc/fluent-bit.conf
+  fluent-bit-docker:
+    profiles: [ "docker" ]
+    image: fluent/fluent-bit:4.2
+    container_name: fluent-bit-docker
+    ports:
+      - "2020:2020"
+      - "24224:24224"
+    restart: unless-stopped
+    volumes:
+      - ./fluent-bit/fluent-bit-docker.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
+      - fluent-bit-storage:/var/fluent-bit/storage
+    depends_on:
+      - loki
 
   loki:
     image: grafana/loki:3.5.0

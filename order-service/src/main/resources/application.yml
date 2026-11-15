@@ -31,7 +31,7 @@ spring:
       value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
       auto-offset-reset: earliest
       properties:
-        schema.registry.url: http://localhost:8083
+        schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8083}
         specific.avro.reader: true
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -70,7 +70,7 @@ management:
     tracing:
       export:
         otlp:
-          endpoint: http://localhost:4318/v1/traces
+          endpoint: ${OTEL_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
 
 logging:
   level:

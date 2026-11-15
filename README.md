@@ -38,3 +38,8 @@ Create the databases above, configure `.env`, then run `docker compose up --buil
 ## Deployment status
 
 Kubernetes application manifests are in `deploy/k8s/apps.yaml`; `deploy/aws/push-and-deploy.sh` builds and publishes images to ECR and applies them to an existing EKS cluster. Provision EKS, MySQL-compatible RDS and Kafka first. Populate `food-delivery-secrets` from AWS Secrets Manager and configure `FRONTEND_URL`, Google OAuth and Stripe settings before applying. AWS account/region resources are not provisioned by this repository.
+
+
+Below command is useful to check all the value comes to docker.
+
+docker compose --env-file .env.docker config
