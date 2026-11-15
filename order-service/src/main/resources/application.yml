@@ -16,6 +16,8 @@ spring:
     name: order-service
   cloud:
     openfeign:
+      micrometer:
+        enabled: true
       client:
         config:
           payment-service:
@@ -51,8 +53,27 @@ spring:
   flyway.enabled: true
 
 springdoc.swagger-ui.path: /swagger-ui.html
+
+#logging.pattern.level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
 management:
-  endpoints.web.exposure.include: health,info,prometheus,metrics
-  tracing.sampling.probability: ${TRACING_SAMPLING:1.0}
-  otlp.tracing.endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
-logging.pattern.level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+
+  tracing:
+    sampling:
+      probability: 1.0
+
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: http://localhost:4318/v1/traces
+
+logging:
+  level:
+    io.micrometer.tracing: DEBUG
+    io.opentelemetry: DEBUG
+    org.springframework.boot.actuate.autoconfigure.tracing: DEBUG

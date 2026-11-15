@@ -40,10 +40,20 @@ resilience4j.retry.instances.stripePaymentIntent:
 springdoc.swagger-ui.path: /swagger-ui.html
 payment:
   internal-key: ${PAYMENT_INTERNAL_KEY:local-payment-key-change-me}
-management:
-  endpoints.web.exposure.include: health,info,prometheus,metrics
-  tracing.sampling.probability: ${TRACING_SAMPLING:1.0}
-  otlp.tracing.endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health,info,prometheus,metrics
+    tracing:
+      sampling:
+        probability: 1.0
+    opentelemetry:
+      tracing:
+        export:
+          otlp:
+            endpoint: http://localhost:4318/v1/traces
 #logging.pattern.level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
 
 logging:

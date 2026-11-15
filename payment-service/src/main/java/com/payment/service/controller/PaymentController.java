@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.MDC;
 
 @RestController
 @RequestMapping("/payments")
@@ -98,6 +99,12 @@ public class PaymentController {
                 "Payment request received. orderId={}, idempotencyKey={}",
                 request.orderId(),
                 request.idempotencyKey()
+        );
+
+        log.info(
+                "Payment trace context: traceId={}, spanId={}",
+                MDC.get("traceId"),
+                MDC.get("spanId")
         );
 
         PaymentResponse response =
